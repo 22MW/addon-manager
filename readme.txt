@@ -108,9 +108,6 @@ No es necesario modificar `addon-manager.php` para que se muestre descripcion/pa
 - `wc-booking-auto-select.php`
   Auto-selecciona franja horaria en productos Bookings cuando solo existe una opcion (WPML compatible).
 
-- `woo-booking-descount.php`
-  Aplica descuentos automaticos en WooCommerce Bookings segun productos, dias y fechas configuradas.
-
 - `woo-bookinng-cleaner.php`
   Limpia reservas WooCommerce Bookings canceladas o pendientes segun reglas configurables.
 
@@ -190,6 +187,9 @@ No es necesario modificar `addon-manager.php` para que se muestre descripcion/pa
 - `verifacwoo-lifetime-network.php`
   Automatiza gestion de socios Lifetime, partners y subagencias sobre flujo WooCommerce.
 
+- `woo-booking-descount.php`
+  Modulo privado para descuentos automáticos en WooCommerce Bookings (no visible en selector público).
+
 == FAQ ==
 
 = Se cargan todos los archivos de carpetas automaticamente? =
@@ -208,6 +208,10 @@ No necesitas tocar `addon-manager.php`.
 = 1.0.2 =
 - Añadido flujo de release con GitHub Actions para tags `v*` y paquete de actualización estricto (`addon-manager.zip`).
 - El ZIP de release ahora excluye `private/` y `RELEASE_UPDATES_GUIDE.md`.
+
+= 1.0.3 =
+- `woo-booking-descount.php` se mueve a `private/` y deja de aparecer en el selector público.
+- `woocommerce-cupones-admin.php` actualizado a versión `2.23`.
 
 = 3.2.2 =
 - Version actual del gestor.

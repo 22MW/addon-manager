@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3 - 2026-04-16
+- Movido `woo-booking-descount.php` a `private/` para excluirlo del selector público de addons.
+- Actualizado `woocommerce-cupones-admin.php` a la versión `2.23` con ajuste de nombre y formato.
+
 ## 1.0.2 - 2026-04-16
 - Añadido workflow de GitHub Actions para construir y publicar `addon-manager.zip` en tags `v*`.
 - Excluidos `private/` y `RELEASE_UPDATES_GUIDE.md` del paquete de release.
