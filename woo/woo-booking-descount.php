@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Descuento Automático para WooCommerce Bookings
  * Description: Aplica descuentos automáticos en WooCommerce Bookings según productos, días y rango de fechas configurado.
+ * Marketing Description: Activa campañas de descuento en reservas con reglas de calendario.
+ * Parameters: Reglas de campaña definidas en código (productos, días y fechas).
  * Version: 1.7
  * Author: 22MW
  */

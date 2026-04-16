@@ -2,6 +2,8 @@
 /*
 Plugin Name: Multisite Orphan Table Scanner
 Description: Escanea la base de datos de la red para detectar tablas huérfanas o no vinculadas a sitios activos.
+Marketing Description: Detecta deuda técnica en base de datos antes de que impacte rendimiento o costes.
+Parameters: Panel de red para detectar basura de base de datos y reducir riesgo técnico.
 Version: 1.0
 
 */

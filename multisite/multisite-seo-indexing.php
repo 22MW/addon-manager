@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Multisite SEO Indexing Manager
  * Description: Gestiona estado de indexación SEO (index/noindex) en todos los sitios de la red multisite.
+ * Marketing Description: Controla index/noindex masivo sin entrar sitio por sitio.
+ * Parameters: Control masivo de indexación SEO en toda la red.
  * Version: 1.0
  * Network: true
  */

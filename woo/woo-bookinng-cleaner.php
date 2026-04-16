@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Limpiador de Reservas
  * Description: Limpia reservas WooCommerce Bookings canceladas o pendientes según reglas configurables.
+ * Marketing Description: Mantiene limpio el sistema de reservas eliminando estados inservibles automáticamente.
+ * Parameters: Panel propio en WooCommerce para limpieza automática de reservas.
  * Version: 2.2
  * Author: 22 MW
  */

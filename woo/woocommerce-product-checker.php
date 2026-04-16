@@ -3,6 +3,8 @@
 /**
  * Plugin Name: WooCommerce Product Purchase Checker
  * Description: Añade shortcodes para comprobar compras por usuario/producto y listar productos comprados.
+ * Marketing Description: Crea experiencias personalizadas validando compras reales con shortcodes.
+ * Parameters: Shortcodes: [check_product_purchased] y [user_purchased_products] para áreas privadas y embudos.
  * Version: 1.0.22
  * Author:  22MW
  */

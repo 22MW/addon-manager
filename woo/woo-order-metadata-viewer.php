@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Ver TODOS metadatos pedido Woo (Clásico + HPOS)
  * Description: Metabox de auditoría para ver todos los metadatos y datos del pedido (Woo clásico y HPOS).
+ * Marketing Description: Visibilidad completa de pedidos para soporte, QA y depuración avanzada.
+ * Parameters: Sin configuración: auditoría de metadatos de pedido en clásico + HPOS.
  * Version: 1.1
  * Author: 22MW
  */

@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Multisite Info
  * Description: Panel en red con información de sitios y plugins en formato grid para auditoría multisite.
+ * Marketing Description: Visión global de sitios y plugins para decisiones técnicas más rápidas.
+ * Parameters: Dashboard de red para inventario rápido de sitios y plugins.
  * Author: 22MW
  * Version: 2.2
  */

@@ -3,6 +3,8 @@
 
  * Plugin Name: WooCommerce Booking Auto-Select with WPML v2.5
  * Description: Auto-selecciona franja horaria en productos Bookings cuando solo existe una opción (compatible con WPML).
+ * Marketing Description: Reduce fricción en reservas autoseleccionando la única opción disponible.
+ * Parameters: Sin configuración: mejora UX en Bookings seleccionando horario único automáticamente.
  * Ubicación: /wp-content/mu-plugins/wc-booking-auto-select.php
  * Version: 2.5
  * Author: 22MW

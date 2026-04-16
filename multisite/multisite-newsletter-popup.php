@@ -3,6 +3,8 @@
 /**
  * Plugin Name: Multisite Newsletter Popup
  * Description: Gestiona popup de newsletter para la red multisite con HTML configurable y control por cookies.
+ * Marketing Description: Orquesta captación newsletter en red con control centralizado.
+ * Parameters: Gestión central de popup newsletter con control por cookies.
  * Version: 1.7.0
  * Author: 22MW
  */

@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Disable textdomain notice
  * Description: Reduce avisos de textdomain en ejecución/admin para limpiar logs y notificaciones.
+ * Marketing Description: Reduce ruido técnico en avisos y logs para trabajar con foco.
+ * Parameters: Sin configuración: activar para reducir ruido en avisos y logs.
  * Version: 1.22
  * Text Domain: 22mw_muplugins
  * Author:22MW

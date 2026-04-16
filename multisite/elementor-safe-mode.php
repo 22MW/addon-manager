@@ -3,6 +3,8 @@
 /**
  * Plugin Name: Elementor Safe Mode
  * Description: Safe Mode allows you to troubleshoot issues by only loading the editor, without loading the theme or any other plugin.
+ * Marketing Description: Aísla incidencias de Elementor de forma rápida y segura.
+ * Parameters: Sin configuración: modo seguro para diagnóstico rápido de Elementor.
  * Plugin URI: https://elementor.com/?utm_source=safe-mode&utm_campaign=plugin-uri&utm_medium=wp-dash
  * Author: Elementor.com
  * Version: 1.0.0

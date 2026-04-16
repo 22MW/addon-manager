@@ -2,6 +2,8 @@
 /*
 Plugin Name: WC cupones pedidos admin y emails
 Description: Muestra cupones usados en pedidos WooCommerce dentro del admin y en emails de administración.
+Marketing Description: Mejora visibilidad comercial mostrando cupones en pedidos y correos administrativos.
+Parameters: Sin configuración: muestra cupones usados en admin y emails.
 Version: 2.22
 Autor:22MW
 */

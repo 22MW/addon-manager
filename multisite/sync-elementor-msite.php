@@ -2,6 +2,8 @@
 /*
 Plugin Name: Sync Elementor Multisite
 Description: Sincroniza plantillas Elementor desde un sitio maestro hacia sitios destino en red multisite.
+Marketing Description: Escala cambios de diseño sincronizando plantillas Elementor entre sitios.
+Parameters: Sincronización de plantillas Elementor desde sitio maestro.
 Author: 22MW
 Version: 2.1
 */

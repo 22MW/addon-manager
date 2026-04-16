@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Disable Admin Notices
  * Description: Oculta avisos del admin y permite mostrarlos/ocultarlos desde un botón en la barra superior.
+ * Marketing Description: Limpia el escritorio de WordPress y deja visibles solo los avisos cuando tú decidas.
+ * Parameters: Sin configuración: activa el módulo y controla avisos desde la barra superior.
  * Version: 2.3.0
  * Author: 22 MW
  */

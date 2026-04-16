@@ -4,7 +4,7 @@ Tags: addon manager, tools, woocommerce, multisite, admin
 Requires at least: 6.0
 Tested up to: 6.9.4
 Requires PHP: 8.0
-Stable tag: 3.2.2
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,12 +23,21 @@ Nota:
 - La carpeta `private/` contiene modulos internos y no entra en el selector del panel actual.
 - Solo se listan en la UI los archivos con cabecera valida `Plugin Name`.
 
+Cabeceras recomendadas por addon (metadata de tarjeta en Addon Manager):
+- `Plugin Name`: nombre visible del addon.
+- `Description`: descripcion tecnica base.
+- `Marketing Description`: texto mostrado en bloque "Descripcion" de la tarjeta.
+- `Parameters`: texto mostrado en bloque "Parametros" de la tarjeta (shortcodes, rutas, flags, etc.).
+- `Long Description`: fallback legacy para parametros si `Parameters` no existe.
+
 == Features ==
 
 - Activacion/desactivacion individual de modulos.
 - Separacion por pestañas: WordPress, WooCommerce, Multisite.
 - Carga ligera: solo se incluyen archivos activos.
 - Extensible: basta con anadir archivo PHP con cabecera valida en carpeta soportada.
+- Metadata por addon: cada archivo define su propia "Descripcion" y "Parametros" sin editar el core del manager.
+- Actualizaciones por GitHub Release con paquete `addon-manager.zip`.
 
 == Installation ==
 
@@ -36,6 +45,26 @@ Nota:
 2. Activar el plugin desde Plugins.
 3. Ir a `Addons` en el menu de admin.
 4. Activar los modulos necesarios con switch.
+
+== Instrucciones de uso ==
+
+1. Entra a `Addons` y activa/desactiva cada modulo con el switch.
+2. Si el addon activo registra pagina de ajustes, aparecera el boton `Configurar` en su tarjeta.
+3. Usa el bloque `Descripcion` para contexto funcional rapido del addon.
+4. Usa el bloque `Parametros` para ver shortcodes, atributos o rutas de configuracion.
+5. Para crear un addon nuevo, anade un archivo `.php` en `addons/`, `woo/` o `multisite/` con esta cabecera minima:
+
+```
+/**
+ * Plugin Name: Mi Addon
+ * Description: Que hace el addon
+ * Marketing Description: Resumen comercial para la tarjeta
+ * Parameters: Shortcode [mi_addon foo="bar"] o "Sin parametros"
+ * Version: 1.0.0
+ */
+```
+
+No es necesario modificar `addon-manager.php` para que se muestre descripcion/parametros del nuevo addon.
 
 == Catalogo de modulos ==
 
@@ -170,11 +199,20 @@ No. Solo se incluyen los archivos marcados como activos en `active_addons`.
 `addons/`, `woo/` y `multisite/`.
 
 = Puedo anadir un modulo nuevo? =
-Si. Crea un `.php` con cabecera `Plugin Name` y `Description` dentro de una carpeta soportada.
+Si. Crea un `.php` dentro de `addons/`, `woo/` o `multisite/` con `Plugin Name` y `Description`.
+Para tarjetas completas en UI, anade tambien `Marketing Description` y `Parameters`.
+No necesitas tocar `addon-manager.php`.
 
 == Changelog ==
+
+= 1.0.2 =
+- Added GitHub Actions release flow for `v*` tags and strict update package (`addon-manager.zip`).
+- Release ZIP now excludes `private/` and `RELEASE_UPDATES_GUIDE.md`.
 
 = 3.2.2 =
 - Version actual del gestor.
 - Documentacion `readme.txt` anadida con catalogo completo de modulos y descripciones.
 
+= 3.2.3 =
+- Readme actualizado: documentadas cabeceras `Marketing Description` y `Parameters`.
+- Instrucciones de uso ampliadas para alta de addons sin cambios en el core.

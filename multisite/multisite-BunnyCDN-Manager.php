@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Multisite BunnyCDN Manager
  * Description: Gestión centralizada de BunnyCDN en multisite con ajustes de red y activación por sitio.
+ * Marketing Description: Gestiona CDN de toda la red desde un único panel de control.
+ * Parameters: Control centralizado de CDN para toda la red.
  * Version: 1.3.2
  * Author: 22MW
  * Network: true

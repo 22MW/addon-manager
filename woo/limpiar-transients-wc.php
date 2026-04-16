@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Limpiar Transients WC
  * Description: Desactiva caché de filtros y limpia transients de WooCommerce de forma periódica.
+ * Marketing Description: Acelera la tienda manteniendo limpia la caché de filtros de WooCommerce.
+ * Parameters: Sin configuración: optimiza filtros de tienda limpiando transients en segundo plano.
  * Version: 1.4
  */
 
