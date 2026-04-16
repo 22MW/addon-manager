@@ -1,6 +1,6 @@
 .addons-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 20px;
     margin-top: 20px;
 }
@@ -74,11 +74,24 @@
 }
 
 input:checked + .slider {
-    background-color: #2271b1;
+    background-color: #7F8BEC;
 }
 
 input:checked + .slider:before {
     transform: translateX(26px);
+}
+.wp-core-ui .button, .wp-core-ui .button-secondary {
+    color: #ffffff;
+    border-radius: 21px;
+    background: #7F8BEC;
+    vertical-align: top;
+    padding: 3px 20px;
+    border: none;
+}
+.wp-core-ui .button:hover, .wp-core-ui .button-secondary:hover {
+    background: #6a71c4;
+    color: #ffffff;
+    border: none;
 }
 
 /* Message styles */
@@ -115,4 +128,12 @@ input:checked + .slider:before {
 }
 .nav-tab-wrapper, .wrap h2.nav-tab-wrapper, h1.nav-tab-wrapper {
     border: none;
+}
+
+.addon-long-description{
+    margin-top: 10px;
+    padding: 10px;
+    background: #7F8BEC;
+    color: #ffffff;
+    border-radius: 10px;
 }

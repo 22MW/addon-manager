@@ -466,7 +466,7 @@ class Addon_Manager {
                         <div class="addon-info">
                             <h3><?php echo esc_html($addon['name']); ?></h3>
                             <p class="addon-description"><strong>Descripción:</strong> <?php echo esc_html($description_text); ?></p>
-                            <div class="addon-long-description" style="margin-top:10px;padding:10px;background:#f9f9f9;border-left:3px solid #2271b1;">
+                            <div class="addon-long-description">
                                 <strong>Parámetros:</strong>
                                 <p style="margin:8px 0 0;"><?php echo esc_html($parameters_text); ?></p>
                             </div>
