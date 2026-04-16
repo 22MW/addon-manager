@@ -206,8 +206,8 @@ No necesitas tocar `addon-manager.php`.
 == Changelog ==
 
 = 1.0.2 =
-- Added GitHub Actions release flow for `v*` tags and strict update package (`addon-manager.zip`).
-- Release ZIP now excludes `private/` and `RELEASE_UPDATES_GUIDE.md`.
+- Añadido flujo de release con GitHub Actions para tags `v*` y paquete de actualización estricto (`addon-manager.zip`).
+- El ZIP de release ahora excluye `private/` y `RELEASE_UPDATES_GUIDE.md`.
 
 = 3.2.2 =
 - Version actual del gestor.

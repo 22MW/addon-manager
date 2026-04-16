@@ -339,7 +339,7 @@ class Addon_Manager
     {
 ?>
         <div class="wrap">
-            <h1>Gestión de Addons</h1>
+            <h1>Addons Manager</h1>
 
             <?php
             $is_multisite = is_multisite();
