@@ -2,15 +2,20 @@
 
 /**
  * Plugin Name: Addon Manager
- * Plugin URI: https://22mw.online/addon-manager/
+ * Plugin URI: https://22mw.online/
  * Description: Panel central para activar/desactivar mini-addons (WordPress, WooCommerce y Multisite) desde una única interfaz.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: 22MW
  * Author URI: https://22mw.online/
  * Update URI: https://github.com/22MW/addon-manager
  */
 
 if (!defined('ABSPATH')) exit;
+
+if (is_admin()) {
+    require_once plugin_dir_path(__FILE__) . 'includes/class-github-updater.php';
+    (new Addon_Manager_Github_Updater())->register_hooks();
+}
 
 class Addon_Manager
 {

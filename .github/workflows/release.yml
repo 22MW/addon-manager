@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build ZIP
+        run: |
+          mkdir -p dist/addon-manager
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='dist' \
+            --exclude='node_modules' \
+            --exclude='vendor' \
+            --exclude='private' \
+            --exclude='RELEASE_UPDATES_GUIDE.md' \
+            --exclude='*.log' \
+            --exclude='.DS_Store' \
+            . dist/addon-manager/
+          cd dist
+          zip -r ../addon-manager.zip addon-manager/
+
+      - name: Extract changelog entry
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BODY=$(awk "/^## ${VERSION}( |$)/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md)
+          if [ -z "$BODY" ]; then
+            BODY="- Release ${VERSION}"
+          fi
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: addon-manager.zip
+          generate_release_notes: false
+          body: ${{ steps.changelog.outputs.body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

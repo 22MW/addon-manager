@@ -4,7 +4,7 @@ Tags: addon manager, tools, woocommerce, multisite, admin
 Requires at least: 6.0
 Tested up to: 6.9.4
 Requires PHP: 8.0
-Stable tag: 3.2.2
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,7 @@ Cabeceras recomendadas por addon (metadata de tarjeta en Addon Manager):
 - Carga ligera: solo se incluyen archivos activos.
 - Extensible: basta con anadir archivo PHP con cabecera valida en carpeta soportada.
 - Metadata por addon: cada archivo define su propia "Descripcion" y "Parametros" sin editar el core del manager.
+- Actualizaciones por GitHub Release con paquete `addon-manager.zip`.
 
 == Installation ==
 
@@ -203,6 +204,10 @@ Para tarjetas completas en UI, anade tambien `Marketing Description` y `Paramete
 No necesitas tocar `addon-manager.php`.
 
 == Changelog ==
+
+= 1.0.2 =
+- Added GitHub Actions release flow for `v*` tags and strict update package (`addon-manager.zip`).
+- Release ZIP now excludes `private/` and `RELEASE_UPDATES_GUIDE.md`.
 
 = 3.2.2 =
 - Version actual del gestor.
