@@ -1,28 +1,35 @@
 <?php
+
 /**
  * Plugin Name: Addon Manager
+ * Plugin URI: https://22mw.online/addon-manager/
  * Description: Panel central para activar/desactivar mini-addons (WordPress, WooCommerce y Multisite) desde una única interfaz.
- * Version: 3.2.2
+ * Version: 1.0.1
  * Author: 22MW
+ * Author URI: https://22mw.online/
+ * Update URI: https://github.com/22MW/addon-manager
  */
 
 if (!defined('ABSPATH')) exit;
 
-class Addon_Manager {
-    
-    public function __construct() {
+class Addon_Manager
+{
+
+    public function __construct()
+    {
         add_action('admin_menu', array($this, 'add_admin_page'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('wp_ajax_toggle_addon', array($this, 'toggle_addon'));
         add_action('wp_loaded', array($this, 'load_active_addons'));
     }
 
-    public function load_active_addons() {
+    public function load_active_addons()
+    {
         $active_addons = get_option('active_addons', array());
         if (empty($active_addons)) return;
-        
+
         $folders = array('addons', 'woo', 'multisite');
-        
+
         foreach ($active_addons as $addon_file) {
             foreach ($folders as $folder) {
                 $addon_path = plugin_dir_path(__FILE__) . $folder . '/' . $addon_file;
@@ -34,31 +41,34 @@ class Addon_Manager {
         }
     }
 
-    private function get_addons() {
+    private function get_addons()
+    {
         $addons = array(
             'wp' => array(),
             'woo' => array(),
             'multisite' => array()
         );
-        
+
         $folders = array('addons' => 'wp', 'woo' => 'woo', 'multisite' => 'multisite');
-        
+
         foreach ($folders as $folder => $tab) {
             $addon_dir = plugin_dir_path(__FILE__) . $folder . '/';
-            
+
             if (!is_dir($addon_dir)) continue;
-            
+
             $files = scandir($addon_dir);
-            
+
             foreach ($files as $file) {
                 if (substr($file, -4) === '.php') {
                     $plugin_data = get_file_data($addon_dir . $file, array(
                         'Name' => 'Plugin Name',
                         'Description' => 'Description',
                         'Version' => 'Version',
-                        'LongDescription' => 'Long Description'
+                        'LongDescription' => 'Long Description',
+                        'MarketingDescription' => 'Marketing Description',
+                        'Parameters' => 'Parameters'
                     ));
-                    
+
                     if ($plugin_data['Name']) {
                         $addons[$tab][] = array(
                             'file' => $file,
@@ -67,17 +77,20 @@ class Addon_Manager {
                             'tab' => $tab,
                             'description' => $plugin_data['Description'],
                             'version' => $plugin_data['Version'],
-                            'long_description' => $plugin_data['LongDescription']
+                            'long_description' => $plugin_data['LongDescription'],
+                            'marketing_description' => $plugin_data['MarketingDescription'],
+                            'parameters' => $plugin_data['Parameters']
                         );
                     }
                 }
             }
         }
-        
+
         return $addons;
     }
 
-    private function resolve_callback_file($callback) {
+    private function resolve_callback_file($callback)
+    {
         try {
             if ($callback instanceof Closure) {
                 $ref = new ReflectionFunction($callback);
@@ -112,7 +125,8 @@ class Addon_Manager {
         return '';
     }
 
-    private function get_slug_from_hook($hook_name) {
+    private function get_slug_from_hook($hook_name)
+    {
         $hook_name = (string) $hook_name;
         if ($hook_name === '') {
             return '';
@@ -130,7 +144,8 @@ class Addon_Manager {
         return '';
     }
 
-    private function get_menu_title_by_slug($slug) {
+    private function get_menu_title_by_slug($slug)
+    {
         global $menu, $submenu;
 
         if (!empty($menu) && is_array($menu)) {
@@ -158,96 +173,11 @@ class Addon_Manager {
         return '';
     }
 
-    private function get_addon_parameters_map() {
-        return array(
-            // addons/
-            'change_pass_form.php' => 'Shortcode [change_pass_form]. Publica el formulario en cualquier página y listo.',
-            'disable_AdminNotice.php' => 'Sin configuración: activa el módulo y controla avisos desde la barra superior.',
-            'disable_textdomain_notice.php' => 'Sin configuración: activar para reducir ruido en avisos y logs.',
-            'email_Redirect_Manager.php' => 'Configurable desde Tools > Email Redirect para enrutar emails de pruebas.',
-            'patch-elementor-related-products-int.php' => 'Sin configuración: pensado para depuración puntual en logs.',
-            'posts_metadata_viewer.php' => 'Sin configuración: añade metabox de auditoría automáticamente.',
-            'public_urls_by_cpt_language.php' => 'Shortcode [public_urls_by_cpt_language]. Atributos: post_types, show_empty, show_titles, languages, exclude_languages, current_language_only.',
-
-            // woo/
-            'limpiar-transients-wc.php' => 'Sin configuración: optimiza filtros de tienda limpiando transients en segundo plano.',
-            'wc-booking-auto-select.php' => 'Sin configuración: mejora UX en Bookings seleccionando horario único automáticamente.',
-            'woo-booking-descount.php' => 'Reglas de campaña definidas en código (productos, días y fechas).',
-            'woo-bookinng-cleaner.php' => 'Panel propio en WooCommerce para limpieza automática de reservas.',
-            'woo-cart-cleaner.php' => 'Configurable en WooCommerce > Products > Cart Cleaner.',
-            'woo-cupon-free-cat-date.php' => 'Reglas promocionales definidas en código (categorías, volumen y fechas).',
-            'woo-order-metadata-viewer.php' => 'Sin configuración: auditoría de metadatos de pedido en clásico + HPOS.',
-            'wooEmailStringEditor.php' => 'Editor visual desde su menú para personalizar textos de emails.',
-            'woocommerce-cupones-admin.php' => 'Sin configuración: muestra cupones usados en admin y emails.',
-            'woocommerce-product-checker.php' => 'Shortcodes: [check_product_purchased] y [user_purchased_products] para áreas privadas y embudos.',
-
-            // multisite/
-            'MultisiteOrphanTableScanner.php' => 'Panel de red para detectar basura de base de datos y reducir riesgo técnico.',
-            'ase-sync-multisite.php' => 'Sin configuración diaria: sincroniza ASE en red y registra incidencias.',
-            'db-options-cleaner-multisite.php' => 'Herramienta de limpieza por prefijos en Network Admin.',
-            'disable-gutenberg-comments.php' => 'Sin configuración: estandariza la red desactivando Gutenberg y comentarios.',
-            'elementor-safe-mode.php' => 'Sin configuración: modo seguro para diagnóstico rápido de Elementor.',
-            'global-variables-multisite.php' => 'Gestiona variables globales desde Network Admin.',
-            'jig-scaner.php' => 'Utilidad interna (menú comentado actualmente).',
-            'miltisite-info.php' => 'Dashboard de red para inventario rápido de sitios y plugins.',
-            'mu-db-native-cleaner.php' => 'Limpieza avanzada de huellas de plugins en tablas nativas WP.',
-            'multisite-BunnyCDN-Manager.php' => 'Control centralizado de CDN para toda la red.',
-            'multisite-newsletter-popup.php' => 'Gestión central de popup newsletter con control por cookies.',
-            'multisite-seo-indexing.php' => 'Control masivo de indexación SEO en toda la red.',
-            'sync-elementor-msite.php' => 'Sincronización de plantillas Elementor desde sitio maestro.',
-            'tabla-cleaner-multisite.php' => 'Limpieza de tablas no-core agrupadas para mantenimiento seguro.',
-            'wp-cleaner-mu-plugin.php' => 'Suite de limpieza de base de datos para Network Admin.',
-        );
-    }
-
-    private function get_addon_description_map() {
-        return array(
-            // addons/
-            'change_pass_form.php' => 'Mejora seguridad y experiencia de usuario con cambio de contraseña directo en frontend.',
-            'disable_AdminNotice.php' => 'Limpia el escritorio de WordPress y deja visibles solo los avisos cuando tú decidas.',
-            'disable_textdomain_notice.php' => 'Reduce ruido técnico en avisos y logs para trabajar con foco.',
-            'email_Redirect_Manager.php' => 'Evita envíos reales en staging y centraliza todos los correos en una bandeja de control.',
-            'patch-elementor-related-products-int.php' => 'Diagnóstico rápido para detectar conflictos en productos relacionados de Elementor Pro.',
-            'posts_metadata_viewer.php' => 'Auditoría total de contenido y metadatos sin instalar herramientas externas.',
-            'public_urls_by_cpt_language.php' => 'Genera inventario SEO de URLs por idioma y tipo de contenido con exportación inmediata.',
-
-            // woo/
-            'limpiar-transients-wc.php' => 'Acelera la tienda manteniendo limpia la caché de filtros de WooCommerce.',
-            'wc-booking-auto-select.php' => 'Reduce fricción en reservas autoseleccionando la única opción disponible.',
-            'woo-booking-descount.php' => 'Activa campañas de descuento en reservas con reglas de calendario.',
-            'woo-bookinng-cleaner.php' => 'Mantiene limpio el sistema de reservas eliminando estados inservibles automáticamente.',
-            'woo-cart-cleaner.php' => 'Recupera rendimiento limpiando carritos caducados de forma programada.',
-            'woo-cupon-free-cat-date.php' => 'Automatiza promociones de envío gratis por categoría, volumen y fechas.',
-            'woo-order-metadata-viewer.php' => 'Visibilidad completa de pedidos para soporte, QA y depuración avanzada.',
-            'wooEmailStringEditor.php' => 'Personaliza comunicación de marca en emails WooCommerce sin tocar plantillas.',
-            'woocommerce-cupones-admin.php' => 'Mejora visibilidad comercial mostrando cupones en pedidos y correos administrativos.',
-            'woocommerce-product-checker.php' => 'Crea experiencias personalizadas validando compras reales con shortcodes.',
-
-            // multisite/
-            'MultisiteOrphanTableScanner.php' => 'Detecta deuda técnica en base de datos antes de que impacte rendimiento o costes.',
-            'ase-sync-multisite.php' => 'Asegura consistencia operativa de ASE en toda la red multisite.',
-            'db-options-cleaner-multisite.php' => 'Limpieza controlada de residuos de plugins para una red más estable.',
-            'disable-gutenberg-comments.php' => 'Estandariza edición y comentarios en toda la red con un solo switch.',
-            'elementor-safe-mode.php' => 'Aísla incidencias de Elementor de forma rápida y segura.',
-            'global-variables-multisite.php' => 'Centraliza variables globales para reducir errores de configuración por sitio.',
-            'jig-scaner.php' => 'Escaneo interno para localizar usos de shortcodes concretos en la red.',
-            'miltisite-info.php' => 'Visión global de sitios y plugins para decisiones técnicas más rápidas.',
-            'mu-db-native-cleaner.php' => 'Limpieza profunda por prefijos con enfoque seguro en tablas nativas WP.',
-            'multisite-BunnyCDN-Manager.php' => 'Gestiona CDN de toda la red desde un único panel de control.',
-            'multisite-newsletter-popup.php' => 'Orquesta captación newsletter en red con control centralizado.',
-            'multisite-seo-indexing.php' => 'Controla index/noindex masivo sin entrar sitio por sitio.',
-            'sync-elementor-msite.php' => 'Escala cambios de diseño sincronizando plantillas Elementor entre sitios.',
-            'tabla-cleaner-multisite.php' => 'Agrupa y limpia tablas no-core con menor riesgo operativo.',
-            'wp-cleaner-mu-plugin.php' => 'Mantenimiento central de base de datos para conservar rendimiento en multisite.',
-        );
-    }
-
-    private function get_addon_description_text($addon) {
-        $file = isset($addon['file']) ? (string) $addon['file'] : '';
-        $map = $this->get_addon_description_map();
-
-        if ($file !== '' && isset($map[$file])) {
-            return $map[$file];
+    private function get_addon_description_text($addon)
+    {
+        $marketing_description = isset($addon['marketing_description']) ? trim((string) $addon['marketing_description']) : '';
+        if ($marketing_description !== '') {
+            return $marketing_description;
         }
 
         if (isset($addon['description']) && trim((string) $addon['description']) !== '') {
@@ -257,8 +187,13 @@ class Addon_Manager {
         return 'Módulo listo para activar y ampliar capacidades del proyecto.';
     }
 
-    private function get_addon_parameters_text($addon) {
-        $file = isset($addon['file']) ? (string) $addon['file'] : '';
+    private function get_addon_parameters_text($addon)
+    {
+        $parameters = isset($addon['parameters']) ? trim((string) $addon['parameters']) : '';
+        if ($parameters !== '') {
+            return $parameters;
+        }
+
         $long_description = isset($addon['long_description']) ? trim((string) $addon['long_description']) : '';
 
         if ($long_description !== '') {
@@ -268,15 +203,11 @@ class Addon_Manager {
             return $long_description;
         }
 
-        $map = $this->get_addon_parameters_map();
-        if ($file !== '' && isset($map[$file])) {
-            return $map[$file];
-        }
-
         return 'Sin parámetros.';
     }
 
-    private function get_detected_settings_pages() {
+    private function get_detected_settings_pages()
+    {
         global $_registered_pages, $wp_filter;
 
         if (empty($_registered_pages) || !is_array($_registered_pages)) {
@@ -373,7 +304,8 @@ class Addon_Manager {
         return $detected;
     }
 
-    public function add_admin_page() {
+    public function add_admin_page()
+    {
         add_menu_page(
             'Addon Manager',
             'Addons',
@@ -385,23 +317,25 @@ class Addon_Manager {
         );
     }
 
-    public function enqueue_assets($hook) {
+    public function enqueue_assets($hook)
+    {
         if ($hook !== 'toplevel_page_addon-manager') return;
-        
+
         wp_enqueue_style('addon-manager-css', plugin_dir_url(__FILE__) . 'assets/style.css', array(), '3.0.0');
         wp_enqueue_script('addon-manager-js', plugin_dir_url(__FILE__) . 'assets/script.js', array('jquery'), '3.0.0', true);
-        
+
         wp_localize_script('addon-manager-js', 'addonManager', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('addon_toggle_nonce')
         ));
     }
 
-    public function render_admin_page() {
-        ?>
+    public function render_admin_page()
+    {
+?>
         <div class="wrap">
             <h1>Gestión de Addons</h1>
-            
+
             <?php
             $is_multisite = is_multisite();
             $is_woo_active = class_exists('WooCommerce');
@@ -419,21 +353,21 @@ class Addon_Manager {
             ?>
             <h2 class="nav-tab-wrapper">
                 <a href="?page=addon-manager&tab=wp" class="nav-tab <?php echo $active_tab === 'wp' ? 'nav-tab-active' : ''; ?>">WordPress</a>
-                
+
                 <?php if ($is_woo_active): ?>
                     <a href="?page=addon-manager&tab=woo" class="nav-tab <?php echo $active_tab === 'woo' ? 'nav-tab-active' : ''; ?>">WooCommerce</a>
                 <?php else: ?>
                     <span class="nav-tab nav-tab-disabled" style="opacity:0.5;cursor:not-allowed;" title="WooCommerce no está activo">WooCommerce</span>
                 <?php endif; ?>
-                
+
                 <?php if ($is_multisite): ?>
                     <a href="?page=addon-manager&tab=multisite" class="nav-tab <?php echo $active_tab === 'multisite' ? 'nav-tab-active' : ''; ?>">Multisite</a>
                 <?php else: ?>
                     <span class="nav-tab nav-tab-disabled" style="opacity:0.5;cursor:not-allowed;" title="No es un sitio Multisite">Multisite</span>
                 <?php endif; ?>
             </h2>
-                        
-            
+
+
 
             <div id="addon-message"></div>
 
@@ -452,14 +386,14 @@ class Addon_Manager {
                     $parameters_text = $this->get_addon_parameters_text($addon);
                     $description_text = $this->get_addon_description_text($addon);
                     $addon_pages = isset($settings_pages[$addon['file']]['pages']) ? $settings_pages[$addon['file']]['pages'] : array();
-                    ?>
+            ?>
                     <div class="addon-card <?php echo $is_active ? 'active' : ''; ?>">
                         <div class="addon-header">
                             <label class="switch">
-                                <input type="checkbox" 
-                                       class="addon-toggle" 
-                                       data-addon="<?php echo esc_attr($addon['file']); ?>"
-                                       <?php checked($is_active); ?>>
+                                <input type="checkbox"
+                                    class="addon-toggle"
+                                    data-addon="<?php echo esc_attr($addon['file']); ?>"
+                                    <?php checked($is_active); ?>>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -480,7 +414,9 @@ class Addon_Manager {
                                     <?php if (count($addon_pages) > 1): ?>
                                         <?php $first_slug = isset($first_page['slug']) ? (string) $first_page['slug'] : ''; ?>
                                         <?php foreach ($addon_pages as $page): ?>
-                                            <?php if (isset($page['slug']) && (string) $page['slug'] === $first_slug) { continue; } ?>
+                                            <?php if (isset($page['slug']) && (string) $page['slug'] === $first_slug) {
+                                                continue;
+                                            } ?>
                                             <a class="button button-link" href="<?php echo esc_url($page['url']); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($page['title']); ?></a>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -488,7 +424,7 @@ class Addon_Manager {
                             <?php endif; ?>
                         </div>
                     </div>
-                    <?php
+            <?php
                 }
                 echo '</div>';
             }
@@ -496,29 +432,33 @@ class Addon_Manager {
             <div class="addon-instructions" style="background:#ffffff;border-radius:20px;padding:15px;margin:20px 0;">
                 <h2 style="margin-top:0;">Instrucciones de Uso</h2>
                 <p><strong>¿Qué es esto?</strong> Gestor de addons modulares para extender funcionalidades de WordPress sin sobrecargar el sitio.</p>
-                
+
                 <h3> Cómo usar:</h3>
                 <ol>
                     <li><strong>Activar/Desactivar:</strong> Usa los switches para activar solo los addons que necesites.</li>
                     <li><strong>Añadir nuevos addons:</strong> Sube archivos PHP a la carpeta <code>addons/</code>, <code>woo/</code> o <code>multisite/</code> dentro del plugin Addon Manager.</li>
-                    <li><strong>Estructura necesaria:</strong> Cada addon debe tener cabecera con Plugin Name, Description y Version.</li>
+                    <li><strong>Estructura recomendada:</strong> Cada addon debe tener cabecera con <code>Plugin Name</code>, <code>Description</code>, <code>Marketing Description</code>, <code>Parameters</code> y <code>Version</code>.</li>
+                    <li><strong>Tarjetas en UI:</strong> "Descripción" usa <code>Marketing Description</code> (fallback: <code>Description</code>) y "Parámetros" usa <code>Parameters</code> (fallback legacy: <code>Long Description</code>).</li>
                 </ol>
-                
+
                 <h3> Consideraciones:</h3>
                 <ul>
-                    <li>Los addons se cargan como <strong>must-use plugins</strong> (siempre disponibles, no desactivables desde Plugins).</li>
+                    <li>Estos addons <strong>no son MU-plugins reales</strong>: se cargan desde Addon Manager como plugin normal.</li>
                     <li>Solo se ejecutan los que tienen el <strong>switch activado</strong>.</li>
+                    <li><strong>Diferencia clave de prioridad de carga:</strong> los MU-plugins se cargan antes y no se activan/desactivan desde "Plugins"; los plugins normales se cargan después y sí se gestionan desde "Plugins".</li>
+                    <li><strong>Orden en este caso:</strong> MU-plugins globales de WordPress &rarr; plugins normales (incluido Addon Manager) &rarr; Addon Manager incluye solo los addons activos.</li>
                     <li>Compatible con Elementor, ACF, WooCommerce y la mayoría de plugins.</li>
                     <li>No afecta el rendimiento: solo carga los addons activos.</li>
                 </ul>
             </div>
         </div>
-        <?php
+<?php
     }
 
-    public function toggle_addon() {
+    public function toggle_addon()
+    {
         check_ajax_referer('addon_toggle_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error('No tienes permisos');
         }

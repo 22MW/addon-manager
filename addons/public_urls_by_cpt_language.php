@@ -2,6 +2,8 @@
 /**
  * Plugin Name: URLs públicas por CPT e idioma
  * Description: Shortcode para listar URLs publicadas por idioma y CPT, con filtros y botón de exportación a Markdown.
+ * Marketing Description: Genera inventario SEO de URLs por idioma y tipo de contenido con exportación inmediata.
+ * Parameters: Shortcode [public_urls_by_cpt_language]. Atributos: post_types, show_empty, show_titles, languages, exclude_languages, current_language_only.
  * Version: 1.0.0
  * Author: 22MW
  * Long Description: Shortcode [public_urls_by_cpt_language]. Parametros: post_types="page,product" (filtra CPT), show_empty="0|1" (muestra u oculta grupos vacios), show_titles="0|1" (muestra u oculta el titulo junto a cada URL), languages="es,en" (incluye solo esos idiomas), exclude_languages="fr,de" (excluye idiomas), current_language_only="0|1" (solo idioma actual). Incluye boton para exportar el listado a .md.

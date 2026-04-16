@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Email Redirect Manager
  * Description: Redirige correos salientes de WordPress a destinatarios de prueba con prefijo configurable (Tools > Email Redirect).
+ * Marketing Description: Evita envíos reales en staging y centraliza todos los correos en una bandeja de control.
+ * Parameters: Configurable desde Tools > Email Redirect para enrutar emails de pruebas.
  * Version: 1.2.2
  * Author: 22 MW
 

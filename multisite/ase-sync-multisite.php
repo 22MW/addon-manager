@@ -1,7 +1,9 @@
 <?php
 /**
- * Plugin Name: ASE Sync Multisite 
+ * Plugin Name: ASE Sync Multisite
  * Description: Sincroniza la configuración de ASE en toda la red multisite y registra incidencias en log.
+ * Marketing Description: Asegura consistencia operativa de ASE en toda la red multisite.
+ * Parameters: Sin configuración diaria: sincroniza ASE en red y registra incidencias.
  * Author: 22MW
  * Version: 1.4
  */

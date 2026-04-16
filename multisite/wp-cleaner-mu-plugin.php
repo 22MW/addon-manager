@@ -2,6 +2,8 @@
 /**
  * Plugin Name: MS DB Cleaner
  * Description: Limpieza controlada de base de datos para red WordPress Multisite con panel en Network Admin.
+ * Marketing Description: Mantenimiento central de base de datos para conservar rendimiento en multisite.
+ * Parameters: Suite de limpieza de base de datos para Network Admin.
  * Version: 1.0.5
  * Author: WP Admin
  * Network: true

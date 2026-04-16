@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Cambio de Contraseña
  * Description: Formulario frontal para usuarios logueados que permite cambiar contraseña con validación y shortcode [change_pass_form].
+ * Marketing Description: Mejora seguridad y experiencia de usuario con cambio de contraseña directo en frontend.
+ * Parameters: Shortcode [change_pass_form]. Publica el formulario en cualquier página y listo.
  * Version: 1.3.0
  * Text Domain: 22mw_muplugins
  * Author:22MW

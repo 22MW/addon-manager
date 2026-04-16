@@ -2,6 +2,8 @@
 /*
 Plugin Name: Debug Elementor related products args
 Description: Addon de depuración que registra en error_log los argumentos de productos relacionados enviados por Elementor Pro.
+Marketing Description: Diagnóstico rápido para detectar conflictos en productos relacionados de Elementor Pro.
+Parameters: Sin configuración: pensado para depuración puntual en logs.
 Version: 1.0
 */
 

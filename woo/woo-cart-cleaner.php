@@ -2,6 +2,8 @@
 /**
  * Plugin Name: WooCommerce Cart Cleaner
  * Description: Limpia carritos abandonados/caducados en intervalos configurables desde WooCommerce > Productos > Cart Cleaner.
+ * Marketing Description: Recupera rendimiento limpiando carritos caducados de forma programada.
+ * Parameters: Configurable en WooCommerce > Products > Cart Cleaner.
  * Version: 4.2
  * Author: 22MW
  */

@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Envío Gratis Automático por Categoría
  * Description: Aplica envío gratis automático por categorías, cantidad mínima y fechas, mostrando cupón informativo en checkout.
+ * Marketing Description: Automatiza promociones de envío gratis por categoría, volumen y fechas.
+ * Parameters: Reglas promocionales definidas en código (categorías, volumen y fechas).
  * Version: 1.4
  * Author: 22 MW
  */

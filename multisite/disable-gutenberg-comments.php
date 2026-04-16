@@ -2,6 +2,8 @@
 /*
 Plugin Name: Desactivar Gutenberg y Comentarios en Multisite
 Description: Desactiva editor de bloques y comentarios en todos los sitios de la red multisite.
+Marketing Description: Estandariza edición y comentarios en toda la red con un solo switch.
+Parameters: Sin configuración: estandariza la red desactivando Gutenberg y comentarios.
 Author: 22MW
 Version: 1.0
 */

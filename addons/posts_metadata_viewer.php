@@ -2,6 +2,8 @@
 /**
  * Plugin Name: Ver TODOS metadatos de cualquier post/CPT
  * Description: Añade un metabox de auditoría para ver postmeta y datos WP_Post en cualquier post type del admin.
+ * Marketing Description: Auditoría total de contenido y metadatos sin instalar herramientas externas.
+ * Parameters: Sin configuración: añade metabox de auditoría automáticamente.
  * Version: 1.0
  * Author: 22MW
  */

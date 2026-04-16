@@ -2,6 +2,8 @@
 /*
 Plugin Name: Global Variables Settings for Specific Site (Network Admin)
 Description: Gestiona variables globales desde Network Admin sobre un sitio objetivo configurable.
+Marketing Description: Centraliza variables globales para reducir errores de configuración por sitio.
+Parameters: Gestiona variables globales desde Network Admin.
 Version: 2.2
 Author: 22MW
 */
