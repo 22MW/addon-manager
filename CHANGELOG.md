@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.5 - 2026-04-17
+- Simplified admin notices: removed global notice layer and restored local notices in Addon Manager screen for reliable feedback on activate/deactivate/upload/delete.
+
 ## 1.0.4 - 2026-04-17
 - Nueva pestaña "Addons de usuario" con subida de `.php` a `wp-content/uploads/addon-manager/user-addons/`.
 - Validación de subida reforzada: permisos, nonce, extensión/tamaño, cabecera mínima, lint y patrones bloqueados.
