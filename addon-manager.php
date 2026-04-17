@@ -4,7 +4,7 @@
  * Plugin Name: Addon Manager
  * Plugin URI: https://22mw.online/
  * Description: Panel central para activar/desactivar mini-addons (WordPress, WooCommerce y Multisite) desde una única interfaz.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: 22MW
  * Author URI: https://22mw.online/
  * Update URI: https://github.com/22MW/addon-manager
@@ -23,6 +23,7 @@ class Addon_Manager
     private const OPTION_ACTIVE_USER = 'addon_manager_active_user_addons';
     private const OPTION_PENDING_ACTIVATION = 'addon_manager_pending_activation';
     private const OPTION_ADMIN_NOTICE = 'addon_manager_admin_notice';
+    private const OPTION_GLOBAL_NOTICE_QUEUE = 'addon_manager_global_notice_queue';
     private const OPTION_BLOCKED_ADDONS = 'addon_manager_blocked_addons';
     private const OPTION_RUNTIME_LOADING = 'addon_manager_runtime_loading';
     private const OPTION_APPROVED_SIGNATURES = 'addon_manager_approved_signatures';
@@ -715,6 +716,93 @@ class Addon_Manager
         ));
     }
 
+    private function get_global_notice_queue()
+    {
+        $raw = get_option(self::OPTION_GLOBAL_NOTICE_QUEUE, array());
+        if (!is_array($raw)) {
+            $raw = array();
+        }
+
+        $normalized = array();
+        foreach ($raw as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $type = isset($entry['type']) ? (string) $entry['type'] : 'error';
+            $message = isset($entry['message']) ? trim((string) $entry['message']) : '';
+            $time = isset($entry['time']) ? (int) $entry['time'] : 0;
+            if ($message === '') {
+                continue;
+            }
+
+            $normalized[] = array(
+                'type' => $type === 'success' ? 'success' : 'error',
+                'message' => $message,
+                'time' => $time > 0 ? $time : time(),
+            );
+        }
+
+        if ($normalized !== $raw) {
+            update_option(self::OPTION_GLOBAL_NOTICE_QUEUE, $normalized);
+        }
+
+        return $normalized;
+    }
+
+    private function set_global_notice_queue(array $queue)
+    {
+        $normalized = array();
+        foreach ($queue as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $type = isset($entry['type']) ? (string) $entry['type'] : 'error';
+            $message = isset($entry['message']) ? trim((string) $entry['message']) : '';
+            $time = isset($entry['time']) ? (int) $entry['time'] : 0;
+            if ($message === '') {
+                continue;
+            }
+
+            $normalized[] = array(
+                'type' => $type === 'success' ? 'success' : 'error',
+                'message' => $message,
+                'time' => $time > 0 ? $time : time(),
+            );
+        }
+
+        update_option(self::OPTION_GLOBAL_NOTICE_QUEUE, $normalized);
+    }
+
+    private function enqueue_global_notice($type, $message)
+    {
+        $message = trim((string) $message);
+        if ($message === '') {
+            return;
+        }
+
+        $queue = $this->get_global_notice_queue();
+        $queue[] = array(
+            'type' => $type === 'success' ? 'success' : 'error',
+            'message' => $message,
+            'time' => time(),
+        );
+        $this->set_global_notice_queue($queue);
+    }
+
+    private function consume_global_notice_from_queue()
+    {
+        $queue = $this->get_global_notice_queue();
+        if (empty($queue)) {
+            return array();
+        }
+
+        $notice = array_shift($queue);
+        $this->set_global_notice_queue($queue);
+        return is_array($notice) ? $notice : array();
+    }
+
     private function set_auto_disabled_notice($addon_name, $reason)
     {
         $addon_name = trim((string) $addon_name);
@@ -727,7 +815,7 @@ class Addon_Manager
             $reason = 'Motivo no especificado.';
         }
 
-        $this->set_admin_notice('error', 'Se desactivó automáticamente "' . $addon_name . '" por seguridad. Motivo: ' . $reason);
+        $this->enqueue_global_notice('error', 'Se desactivó automáticamente "' . $addon_name . '" por seguridad. Motivo: ' . $reason);
     }
 
     private function get_addon_label_from_id($addon_id)
@@ -832,7 +920,7 @@ class Addon_Manager
         }
 
         if (empty($notice['message'])) {
-            $notice = $this->get_recent_blocked_notice();
+            $notice = $this->consume_global_notice_from_queue();
         }
 
         if (empty($notice['message'])) {
@@ -1461,7 +1549,7 @@ class Addon_Manager
 
                 $this->disable_addon_by_id($addon_id);
                 $this->set_blocked_addon($addon_id, $error_message);
-                $this->set_admin_notice('error', 'Se desactivó automáticamente "' . $addon_name . '" por error crítico al cargar el addon.');
+                $this->set_auto_disabled_notice($addon_name, 'Error crítico al cargar el addon.');
             }
 
             $this->clear_runtime_loading_marker();
@@ -1482,7 +1570,7 @@ class Addon_Manager
 
         $this->disable_addon_by_id($addon_id);
         $this->set_blocked_addon($addon_id, $error_message);
-        $this->set_admin_notice('error', 'Se desactivó automáticamente "' . $addon_name . '" por error crítico: ' . $error_message);
+        $this->set_auto_disabled_notice($addon_name, 'Error crítico durante activación.');
         $this->clear_pending_activation();
     }
 

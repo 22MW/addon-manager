@@ -4,7 +4,7 @@ Tags: addon manager, tools, woocommerce, multisite, admin
 Requires at least: 6.0
 Tested up to: 6.9.4
 Requires PHP: 8.0
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,7 +18,7 @@ Addon Manager permite cargar modulos pequenos de forma selectiva desde:
 - `multisite/` (Network / multisite)
 - `uploads/addon-manager/user-addons/` (Addons de usuario)
 
-Cada modulo se activa con switch y se carga en runtime segun la opcion `active_addons`.
+Cada modulo se activa con switch y se carga en runtime segun su estado guardado.
 
 Nota:
 - La carpeta `private/` contiene modulos internos y no entra en el selector del panel actual.
@@ -40,8 +40,11 @@ Cabeceras recomendadas por addon (metadata de tarjeta en Addon Manager):
 - Metadata por addon: cada archivo define su propia "Descripcion" y "Parametros" sin editar el core del manager.
 - Actualizaciones por GitHub Release con paquete `addon-manager.zip`.
 - Subida de addons de usuario (`.php`) a carpeta externa en `uploads` para que no se pierdan al actualizar.
-- Activacion segura con cuarentena + loopback healthcheck (si falla, se revierte automaticamente).
-- Auto-desactivacion del ultimo addon activado si provoca error critico.
+- Validacion de subida reforzada: capability, nonce, extension `.php`, tamano maximo, cabecera minima, lint y patrones bloqueados.
+- Boton para eliminar addons de usuario subidos desde la propia tarjeta.
+- Activacion segura con cuarentena + loopback healthcheck (si falla, no se activa).
+- Modo estricto runtime: si un addon activo cambia su archivo o falla al cargar, se desactiva automaticamente.
+- Notificaciones de seguridad en admin (globales) y estado "Ultimo bloqueo" por addon.
 
 == Installation ==
 
@@ -57,9 +60,10 @@ Cabeceras recomendadas por addon (metadata de tarjeta en Addon Manager):
 3. Usa el bloque `Descripcion` para contexto funcional rapido del addon.
 4. Usa el bloque `Parametros` para ver shortcodes, atributos o rutas de configuracion.
 5. Para addons propios, anade un archivo `.php` en `addons/`, `woo/` o `multisite/`.
-6. Para addons de usuario, usa la pestaña `Addons de usuario` y sube un archivo `.php`.
-7. Todo addon activado pasa verificacion de salud (loopback) antes de quedar activo.
-8. Si un addon da error critico tras activarlo, se desactiva automaticamente y se muestra aviso.
+6. Para addons de usuario, usa la pestaña `Addons de usuario` (ultima pestaña) y sube un archivo `.php`.
+7. Puedes eliminar un addon de usuario desde el boton `Eliminar archivo` de su tarjeta.
+8. Todo addon activado pasa verificacion de salud (loopback) antes de quedar activo.
+9. Si un addon activo cambia o produce error, se desactiva automaticamente y se registra aviso de seguridad.
 
 Cabecera minima recomendada:
 
@@ -215,7 +219,16 @@ No necesitas tocar `addon-manager.php`.
 = Los addons de usuario se pierden al actualizar el plugin? =
 No. Se guardan en `wp-content/uploads/addon-manager/user-addons/`, fuera de la carpeta del plugin.
 
+= Que pasa si edito un addon activo y queda roto? =
+Modo estricto: el addon se desactiva automaticamente por seguridad. El panel muestra "Ultimo bloqueo" y se registra aviso en admin.
+
 == Changelog ==
+
+= 1.0.4 =
+- Nueva pestaña operativa de `Addons de usuario` con subida segura de `.php` en `uploads`.
+- Validacion reforzada en subida (nonce/permisos, tamano, cabecera minima, lint y patrones bloqueados).
+- Activacion segura con healthcheck y rollback, mas modo estricto runtime para auto-desactivar addons modificados o rotos.
+- Boton de eliminar archivo para addons de usuario y mejoras de notificaciones de seguridad.
 
 = 1.0.2 =
 - Añadido flujo de release con GitHub Actions para tags `v*` y paquete de actualización estricto (`addon-manager.zip`).

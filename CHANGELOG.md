@@ -1,13 +1,11 @@
 # Changelog
 
-## Unreleased - 2026-04-17
-- Añadida nueva pestaña "Addons de usuario" con subida de `.php` a `wp-content/uploads/addon-manager/user-addons/`.
-- Añadida validación mínima al subir: capability + nonce, extensión, tamaño, cabecera `Plugin Name`, lint y patrones bloqueados.
-- Unificada la activación de addons propios y de usuario con IDs sin colisiones.
-- Añadida cuarentena estricta de activación para todos los addons (propios + usuario) con loopback healthcheck.
-- Añadido rollback automático y aviso en admin cuando falla el healthcheck.
-- Añadida guardia de fatal en shutdown para desactivar automáticamente el último addon pendiente tras error crítico.
-- Actualizados mensajes de UI y documentación para el flujo de addons de usuario y activación segura.
+## 1.0.4 - 2026-04-17
+- Nueva pestaña "Addons de usuario" con subida de `.php` a `wp-content/uploads/addon-manager/user-addons/`.
+- Validación de subida reforzada: permisos, nonce, extensión/tamaño, cabecera mínima, lint y patrones bloqueados.
+- Activación segura unificada para addons core + usuario con healthcheck, cuarentena y rollback.
+- Modo estricto en runtime: si un addon activo cambia o falla al cargar, se desactiva automáticamente.
+- Nuevos avisos de seguridad y mejoras de UX en subida/eliminación de addons de usuario.
 
 ## 1.0.3 - 2026-04-16
 - Movido `woo-booking-descount.php` a `private/` para excluirlo del selector público de addons.
