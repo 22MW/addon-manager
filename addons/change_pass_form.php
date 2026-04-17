@@ -12,7 +12,7 @@
 
 // Cargar traducciones
 
-add_action('muplugins_loaded', 'fcp_cargar_traducciones');
+add_action('muplugin   s_loaded', 'fcp_cargar_traducciones');
 function fcp_cargar_traducciones()
 {
     load_muplugin_textdomain('22mw_muplugins', basename(dirname(__FILE__)));

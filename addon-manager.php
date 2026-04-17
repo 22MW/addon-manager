@@ -25,14 +25,19 @@ class Addon_Manager
     private const OPTION_ADMIN_NOTICE = 'addon_manager_admin_notice';
     private const OPTION_BLOCKED_ADDONS = 'addon_manager_blocked_addons';
     private const OPTION_RUNTIME_LOADING = 'addon_manager_runtime_loading';
+    private const OPTION_APPROVED_SIGNATURES = 'addon_manager_approved_signatures';
     private const HEALTHCHECK_TRANSIENT_PREFIX = 'addon_manager_hc_';
     private const MAX_USER_ADDON_SIZE = 524288;
+    private static $global_notice_rendered = false;
     private $is_healthcheck_request = false;
     private $healthcheck_payload = array();
 
     public function __construct()
     {
         add_action('admin_menu', array($this, 'add_admin_page'));
+        add_action('admin_notices', array($this, 'display_global_admin_notice'));
+        add_action('all_admin_notices', array($this, 'display_global_admin_notice'));
+        add_action('network_admin_notices', array($this, 'display_global_admin_notice'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('wp_ajax_toggle_addon', array($this, 'toggle_addon'));
         add_action('wp_ajax_addon_manager_upload_user_addon', array($this, 'handle_user_addon_upload_ajax'));
@@ -47,24 +52,51 @@ class Addon_Manager
 
     public function load_active_addons()
     {
+        $approved_signatures = $this->get_approved_signatures();
+        $signatures_changed = false;
+
         $core_active = $this->get_active_core_addons();
         $valid_core_active = array();
         if (!empty($core_active)) {
             foreach ($core_active as $relative_file) {
                 $addon_path = plugin_dir_path(__FILE__) . $relative_file;
+                $addon_id = $this->build_core_addon_id($relative_file);
                 if (!is_file($addon_path)) {
+                    if (isset($approved_signatures[$addon_id])) {
+                        unset($approved_signatures[$addon_id]);
+                        $signatures_changed = true;
+                    }
+                    $reason = 'No se encontró el archivo del addon activo.';
+                    $this->set_blocked_addon($addon_id, $reason);
+                    $this->set_auto_disabled_notice(basename($relative_file), $reason);
+                    continue;
+                }
+
+                $current_signature = $this->build_addon_file_signature($addon_path);
+                $approved_signature = isset($approved_signatures[$addon_id]) ? (string) $approved_signatures[$addon_id] : '';
+                if ($approved_signature === '') {
+                    $approved_signatures[$addon_id] = $current_signature;
+                    $signatures_changed = true;
+                } elseif ($current_signature !== $approved_signature) {
+                    unset($approved_signatures[$addon_id]);
+                    $signatures_changed = true;
+                    $reason = 'Se detectó un cambio en el archivo del addon activo.';
+                    $this->set_blocked_addon($addon_id, $reason);
+                    $this->set_auto_disabled_notice(basename($relative_file), $reason);
                     continue;
                 }
 
                 $lint_message = '';
                 if (!$this->lint_php_file($addon_path, $lint_message)) {
-                    $addon_id = $this->build_core_addon_id($relative_file);
-                    $this->set_blocked_addon($addon_id, $this->build_syntax_error_message($lint_message));
+                    $reason = $this->build_syntax_error_message($lint_message);
+                    $this->set_blocked_addon($addon_id, $reason);
+                    $this->set_auto_disabled_notice(basename($relative_file), $reason);
+                    unset($approved_signatures[$addon_id]);
+                    $signatures_changed = true;
                     continue;
                 }
 
                 $valid_core_active[] = $relative_file;
-                $addon_id = $this->build_core_addon_id($relative_file);
                 $this->set_runtime_loading_marker($addon_id, basename($relative_file));
                 include_once $addon_path;
                 $this->clear_runtime_loading_marker();
@@ -80,19 +112,43 @@ class Addon_Manager
         $valid_user_active = array();
         foreach ($user_active as $file_name) {
             $addon_path = trailingslashit($user_dir) . $file_name;
+            $addon_id = $this->build_user_addon_id($file_name);
             if (!is_file($addon_path)) {
+                if (isset($approved_signatures[$addon_id])) {
+                    unset($approved_signatures[$addon_id]);
+                    $signatures_changed = true;
+                }
+                $reason = 'No se encontró el archivo del addon activo.';
+                $this->set_blocked_addon($addon_id, $reason);
+                $this->set_auto_disabled_notice($file_name, $reason);
+                continue;
+            }
+
+            $current_signature = $this->build_addon_file_signature($addon_path);
+            $approved_signature = isset($approved_signatures[$addon_id]) ? (string) $approved_signatures[$addon_id] : '';
+            if ($approved_signature === '') {
+                $approved_signatures[$addon_id] = $current_signature;
+                $signatures_changed = true;
+            } elseif ($current_signature !== $approved_signature) {
+                unset($approved_signatures[$addon_id]);
+                $signatures_changed = true;
+                $reason = 'Se detectó un cambio en el archivo del addon activo.';
+                $this->set_blocked_addon($addon_id, $reason);
+                $this->set_auto_disabled_notice($file_name, $reason);
                 continue;
             }
 
             $lint_message = '';
             if (!$this->lint_php_file($addon_path, $lint_message)) {
-                $addon_id = $this->build_user_addon_id($file_name);
-                $this->set_blocked_addon($addon_id, $this->build_syntax_error_message($lint_message));
+                $reason = $this->build_syntax_error_message($lint_message);
+                $this->set_blocked_addon($addon_id, $reason);
+                $this->set_auto_disabled_notice($file_name, $reason);
+                unset($approved_signatures[$addon_id]);
+                $signatures_changed = true;
                 continue;
             }
 
             $valid_user_active[] = $file_name;
-            $addon_id = $this->build_user_addon_id($file_name);
             $this->set_runtime_loading_marker($addon_id, $file_name);
             include_once $addon_path;
             $this->clear_runtime_loading_marker();
@@ -100,6 +156,10 @@ class Addon_Manager
 
         if ($valid_user_active !== $user_active) {
             $this->set_active_user_addons($valid_user_active);
+        }
+
+        if ($signatures_changed) {
+            $this->set_approved_signatures($approved_signatures);
         }
 
         $this->maybe_include_healthcheck_probe_addon();
@@ -655,11 +715,225 @@ class Addon_Manager
         ));
     }
 
+    private function set_auto_disabled_notice($addon_name, $reason)
+    {
+        $addon_name = trim((string) $addon_name);
+        if ($addon_name === '') {
+            $addon_name = 'addon';
+        }
+
+        $reason = trim((string) $reason);
+        if ($reason === '') {
+            $reason = 'Motivo no especificado.';
+        }
+
+        $this->set_admin_notice('error', 'Se desactivó automáticamente "' . $addon_name . '" por seguridad. Motivo: ' . $reason);
+    }
+
+    private function get_addon_label_from_id($addon_id)
+    {
+        $parsed = $this->parse_addon_id($addon_id);
+        if ($parsed['origin'] === 'core') {
+            return basename((string) $parsed['value']);
+        }
+
+        if ($parsed['origin'] === 'user') {
+            return basename((string) $parsed['value']);
+        }
+
+        return (string) $addon_id;
+    }
+
+    private function get_recent_blocked_notice($max_age_seconds = 1800)
+    {
+        $blocked = $this->get_blocked_addons();
+        if (empty($blocked)) {
+            return array();
+        }
+
+        $latest_id = '';
+        $latest = array();
+        foreach ($blocked as $addon_id => $payload) {
+            if (!is_array($payload)) {
+                continue;
+            }
+
+            $blocked_time = isset($payload['time']) ? (int) $payload['time'] : 0;
+            if ($blocked_time <= 0) {
+                continue;
+            }
+
+            if (empty($latest) || $blocked_time > (int) $latest['time']) {
+                $latest = $payload;
+                $latest_id = (string) $addon_id;
+            }
+        }
+
+        if (empty($latest) || $latest_id === '') {
+            return array();
+        }
+
+        $age = time() - (int) $latest['time'];
+        if ($age < 0 || $age > (int) $max_age_seconds) {
+            return array();
+        }
+
+        $label = $this->get_addon_label_from_id($latest_id);
+        $reason = isset($latest['message']) ? trim((string) $latest['message']) : '';
+        if ($reason === '') {
+            $reason = 'Motivo no especificado.';
+        }
+
+        return array(
+            'type' => 'error',
+            'message' => 'Se desactivó automáticamente "' . $label . '" por seguridad. Motivo: ' . $reason,
+        );
+    }
+
     private function consume_admin_notice()
     {
         $notice = get_option(self::OPTION_ADMIN_NOTICE, array());
         delete_option(self::OPTION_ADMIN_NOTICE);
         return is_array($notice) ? $notice : array();
+    }
+
+    private function get_notice_from_query()
+    {
+        if (!isset($_GET['am_notice_msg'])) {
+            return array();
+        }
+
+        $query_notice_type = isset($_GET['am_notice_type']) ? sanitize_key(wp_unslash($_GET['am_notice_type'])) : 'error';
+        $query_notice_msg = sanitize_text_field((string) wp_unslash($_GET['am_notice_msg']));
+        if ($query_notice_msg === '') {
+            return array();
+        }
+
+        return array(
+            'type' => $query_notice_type === 'success' ? 'success' : 'error',
+            'message' => $query_notice_msg,
+        );
+    }
+
+    public function display_global_admin_notice()
+    {
+        if (self::$global_notice_rendered) {
+            return;
+        }
+
+        if (!is_admin() || (!current_user_can('manage_options') && !current_user_can('activate_plugins'))) {
+            return;
+        }
+
+        $notice = $this->consume_admin_notice();
+        $query_notice = $this->get_notice_from_query();
+        if (!empty($query_notice['message'])) {
+            $notice = $query_notice;
+        }
+
+        if (empty($notice['message'])) {
+            $notice = $this->get_recent_blocked_notice();
+        }
+
+        if (empty($notice['message'])) {
+            return;
+        }
+
+        $notice_type = !empty($notice['type']) && $notice['type'] === 'success' ? 'notice-success' : 'notice-error';
+        echo '<div class="notice ' . esc_attr($notice_type) . ' is-dismissible"><p>' . esc_html((string) $notice['message']) . '</p></div>';
+        self::$global_notice_rendered = true;
+    }
+
+    private function get_approved_signatures()
+    {
+        $raw = get_option(self::OPTION_APPROVED_SIGNATURES, array());
+        if (!is_array($raw)) {
+            $raw = array();
+        }
+
+        $normalized = array();
+        foreach ($raw as $addon_id => $signature) {
+            $addon_id = trim((string) $addon_id);
+            $signature = trim((string) $signature);
+            if ($addon_id === '' || $signature === '') {
+                continue;
+            }
+            $normalized[$addon_id] = $signature;
+        }
+
+        if ($normalized !== $raw) {
+            update_option(self::OPTION_APPROVED_SIGNATURES, $normalized);
+        }
+
+        return $normalized;
+    }
+
+    private function set_approved_signatures(array $signatures)
+    {
+        $normalized = array();
+        foreach ($signatures as $addon_id => $signature) {
+            $addon_id = trim((string) $addon_id);
+            $signature = trim((string) $signature);
+            if ($addon_id === '' || $signature === '') {
+                continue;
+            }
+            $normalized[$addon_id] = $signature;
+        }
+
+        update_option(self::OPTION_APPROVED_SIGNATURES, $normalized);
+    }
+
+    private function set_approved_signature($addon_id, $signature)
+    {
+        $addon_id = trim((string) $addon_id);
+        $signature = trim((string) $signature);
+        if ($addon_id === '' || $signature === '') {
+            return;
+        }
+
+        $signatures = $this->get_approved_signatures();
+        if (isset($signatures[$addon_id]) && $signatures[$addon_id] === $signature) {
+            return;
+        }
+
+        $signatures[$addon_id] = $signature;
+        $this->set_approved_signatures($signatures);
+    }
+
+    private function clear_approved_signature($addon_id)
+    {
+        $addon_id = trim((string) $addon_id);
+        if ($addon_id === '') {
+            return;
+        }
+
+        $signatures = $this->get_approved_signatures();
+        if (!isset($signatures[$addon_id])) {
+            return;
+        }
+
+        unset($signatures[$addon_id]);
+        $this->set_approved_signatures($signatures);
+    }
+
+    private function build_addon_file_signature($file_path)
+    {
+        $file_path = (string) $file_path;
+        if ($file_path === '' || !is_file($file_path)) {
+            return '';
+        }
+
+        $mtime = @filemtime($file_path);
+        $size = @filesize($file_path);
+        $hash = '';
+        if (function_exists('sha1_file')) {
+            $hash_value = @sha1_file($file_path);
+            if (is_string($hash_value)) {
+                $hash = $hash_value;
+            }
+        }
+
+        return (string) ((int) $mtime) . '|' . (string) ((int) $size) . '|' . $hash;
     }
 
     private function get_php_lint_binary()
@@ -1153,11 +1427,13 @@ class Addon_Manager
 
     private function disable_addon_by_id($addon_id)
     {
+        $addon_id = (string) $addon_id;
         $parsed = $this->parse_addon_id($addon_id);
         if ($parsed['origin'] === 'core') {
             $active_core = $this->get_active_core_addons();
             $active_core = array_values(array_diff($active_core, array($parsed['value'])));
             $this->set_active_core_addons($active_core);
+            $this->clear_approved_signature($addon_id);
             return;
         }
 
@@ -1165,6 +1441,7 @@ class Addon_Manager
             $active_user = $this->get_active_user_addons();
             $active_user = array_values(array_diff($active_user, array($parsed['value'])));
             $this->set_active_user_addons($active_user);
+            $this->clear_approved_signature($addon_id);
         }
     }
 
@@ -1372,26 +1649,6 @@ class Addon_Manager
 
                 <a href="?page=addon-manager&tab=user" class="nav-tab <?php echo $active_tab === 'user' ? 'nav-tab-active' : ''; ?>">Addons de usuario</a>
             </h2>
-
-            <?php
-            $notice = $this->consume_admin_notice();
-            if (isset($_GET['am_notice_msg'])) {
-                $query_notice_type = isset($_GET['am_notice_type']) ? sanitize_key(wp_unslash($_GET['am_notice_type'])) : 'error';
-                $query_notice_msg = sanitize_text_field((string) wp_unslash($_GET['am_notice_msg']));
-                if ($query_notice_msg !== '') {
-                    $notice = array(
-                        'type' => $query_notice_type === 'success' ? 'success' : 'error',
-                        'message' => $query_notice_msg,
-                    );
-                }
-            }
-            if (!empty($notice['message'])):
-                $notice_type = !empty($notice['type']) && $notice['type'] === 'success' ? 'notice-success' : 'notice-error';
-            ?>
-                <div class="notice <?php echo esc_attr($notice_type); ?> is-dismissible" style="margin-top:12px;">
-                    <p><?php echo esc_html((string) $notice['message']); ?></p>
-                </div>
-            <?php endif; ?>
 
             <div id="addon-message"></div>
 
@@ -1615,6 +1872,12 @@ class Addon_Manager
             $active_user = $this->get_active_user_addons();
             $active_user[] = $parsed['value'];
             $this->set_active_user_addons($active_user);
+        }
+
+        $approved_path = $this->get_addon_path_by_id($addon_id);
+        $approved_signature = $this->build_addon_file_signature($approved_path);
+        if ($approved_signature !== '') {
+            $this->set_approved_signature($addon_id, $approved_signature);
         }
 
         $this->clear_pending_activation();
