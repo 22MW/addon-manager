@@ -4,7 +4,7 @@ Tags: addon manager, tools, woocommerce, multisite, admin
 Requires at least: 6.0
 Tested up to: 6.9.4
 Requires PHP: 8.0
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,6 +16,7 @@ Addon Manager permite cargar modulos pequenos de forma selectiva desde:
 - `addons/` (WordPress general)
 - `woo/` (WooCommerce)
 - `multisite/` (Network / multisite)
+- `uploads/addon-manager/user-addons/` (Addons de usuario)
 
 Cada modulo se activa con switch y se carga en runtime segun la opcion `active_addons`.
 
@@ -33,11 +34,14 @@ Cabeceras recomendadas por addon (metadata de tarjeta en Addon Manager):
 == Features ==
 
 - Activacion/desactivacion individual de modulos.
-- Separacion por pestañas: WordPress, WooCommerce, Multisite.
+- Separacion por pestañas: WordPress, Addons de usuario, WooCommerce, Multisite.
 - Carga ligera: solo se incluyen archivos activos.
 - Extensible: basta con anadir archivo PHP con cabecera valida en carpeta soportada.
 - Metadata por addon: cada archivo define su propia "Descripcion" y "Parametros" sin editar el core del manager.
 - Actualizaciones por GitHub Release con paquete `addon-manager.zip`.
+- Subida de addons de usuario (`.php`) a carpeta externa en `uploads` para que no se pierdan al actualizar.
+- Activacion segura con cuarentena + loopback healthcheck (si falla, se revierte automaticamente).
+- Auto-desactivacion del ultimo addon activado si provoca error critico.
 
 == Installation ==
 
@@ -52,7 +56,12 @@ Cabeceras recomendadas por addon (metadata de tarjeta en Addon Manager):
 2. Si el addon activo registra pagina de ajustes, aparecera el boton `Configurar` en su tarjeta.
 3. Usa el bloque `Descripcion` para contexto funcional rapido del addon.
 4. Usa el bloque `Parametros` para ver shortcodes, atributos o rutas de configuracion.
-5. Para crear un addon nuevo, anade un archivo `.php` en `addons/`, `woo/` o `multisite/` con esta cabecera minima:
+5. Para addons propios, anade un archivo `.php` en `addons/`, `woo/` o `multisite/`.
+6. Para addons de usuario, usa la pestaña `Addons de usuario` y sube un archivo `.php`.
+7. Todo addon activado pasa verificacion de salud (loopback) antes de quedar activo.
+8. Si un addon da error critico tras activarlo, se desactiva automaticamente y se muestra aviso.
+
+Cabecera minima recomendada:
 
 ```
 /**
@@ -196,12 +205,15 @@ No es necesario modificar `addon-manager.php` para que se muestre descripcion/pa
 No. Solo se incluyen los archivos marcados como activos en `active_addons`.
 
 = Que carpeta usa el selector del panel? =
-`addons/`, `woo/` y `multisite/`.
+`addons/`, `woo/`, `multisite/` y `uploads/addon-manager/user-addons/`.
 
 = Puedo anadir un modulo nuevo? =
 Si. Crea un `.php` dentro de `addons/`, `woo/` o `multisite/` con `Plugin Name` y `Description`.
 Para tarjetas completas en UI, anade tambien `Marketing Description` y `Parameters`.
 No necesitas tocar `addon-manager.php`.
+
+= Los addons de usuario se pierden al actualizar el plugin? =
+No. Se guardan en `wp-content/uploads/addon-manager/user-addons/`, fuera de la carpeta del plugin.
 
 == Changelog ==
 
