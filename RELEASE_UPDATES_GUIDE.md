@@ -60,7 +60,7 @@ No hagas cambios extra fuera de este flujo.
 ```text
 En /Users/22mw/Local Sites/verifacwoo/app/public/wp-content/plugins/addon-manager ejecuta release completo automático:
 1) Incrementa versión PATCH en la cabecera del plugin.
-2) Añade entrada corta y precisa en inglés en CHANGELOG.md.
+2) Añade entrada corta y precisa en CHANGELOG.md.
 3) Actualiza   readme.txt solo si hay funcionalidad nueva.
 4) Ejecuta php -l en todos los PHP tocados y git diff --check.
 5) Commit y push a mishaDev.

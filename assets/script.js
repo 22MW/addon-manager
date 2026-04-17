@@ -1,7 +1,20 @@
+/**
+ * Addon Manager admin interactions.
+ *
+ * Handles addon toggle requests and redirects to preserve server-side notices.
+ *
+ * @param {jQuery} $ jQuery instance.
+ * @returns {void}
+ */
 jQuery(document).ready(function($) {
     // La subida de addons de usuario se maneja por admin-post (backend),
     // para asegurar avisos consistentes incluso en entornos locales.
 
+    /**
+     * Toggle addon activation state from the admin cards.
+     *
+     * @returns {void}
+     */
     $('.addon-toggle').on('change', function() {
         var $checkbox = $(this);
         var addon = $checkbox.data('addon');

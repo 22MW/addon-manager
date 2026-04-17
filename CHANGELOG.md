@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.6 - 2026-04-17
+- Refactor estructural interno: bootstrap más limpio, clase principal movida a `includes/Core/`, corrección de carga duplicada y estabilidad en activación/notificaciones.
+
 ## 1.0.5 - 2026-04-17
 - Simplified admin notices: removed global notice layer and restored local notices in Addon Manager screen for reliable feedback on activate/deactivate/upload/delete.
 
