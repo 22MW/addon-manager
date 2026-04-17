@@ -4,7 +4,7 @@
  * Plugin Name: Addon Manager
  * Plugin URI: https://22mw.online/
  * Description: Panel central para activar/desactivar mini-addons (WordPress, WooCommerce y Multisite) desde una única interfaz.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: 22MW
  * Author URI: https://22mw.online/
  * Update URI: https://github.com/22MW/addon-manager
@@ -23,22 +23,17 @@ class Addon_Manager
     private const OPTION_ACTIVE_USER = 'addon_manager_active_user_addons';
     private const OPTION_PENDING_ACTIVATION = 'addon_manager_pending_activation';
     private const OPTION_ADMIN_NOTICE = 'addon_manager_admin_notice';
-    private const OPTION_GLOBAL_NOTICE_QUEUE = 'addon_manager_global_notice_queue';
     private const OPTION_BLOCKED_ADDONS = 'addon_manager_blocked_addons';
     private const OPTION_RUNTIME_LOADING = 'addon_manager_runtime_loading';
     private const OPTION_APPROVED_SIGNATURES = 'addon_manager_approved_signatures';
     private const HEALTHCHECK_TRANSIENT_PREFIX = 'addon_manager_hc_';
     private const MAX_USER_ADDON_SIZE = 524288;
-    private static $global_notice_rendered = false;
     private $is_healthcheck_request = false;
     private $healthcheck_payload = array();
 
     public function __construct()
     {
         add_action('admin_menu', array($this, 'add_admin_page'));
-        add_action('admin_notices', array($this, 'display_global_admin_notice'));
-        add_action('all_admin_notices', array($this, 'display_global_admin_notice'));
-        add_action('network_admin_notices', array($this, 'display_global_admin_notice'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('wp_ajax_toggle_addon', array($this, 'toggle_addon'));
         add_action('wp_ajax_addon_manager_upload_user_addon', array($this, 'handle_user_addon_upload_ajax'));
@@ -716,93 +711,6 @@ class Addon_Manager
         ));
     }
 
-    private function get_global_notice_queue()
-    {
-        $raw = get_option(self::OPTION_GLOBAL_NOTICE_QUEUE, array());
-        if (!is_array($raw)) {
-            $raw = array();
-        }
-
-        $normalized = array();
-        foreach ($raw as $entry) {
-            if (!is_array($entry)) {
-                continue;
-            }
-
-            $type = isset($entry['type']) ? (string) $entry['type'] : 'error';
-            $message = isset($entry['message']) ? trim((string) $entry['message']) : '';
-            $time = isset($entry['time']) ? (int) $entry['time'] : 0;
-            if ($message === '') {
-                continue;
-            }
-
-            $normalized[] = array(
-                'type' => $type === 'success' ? 'success' : 'error',
-                'message' => $message,
-                'time' => $time > 0 ? $time : time(),
-            );
-        }
-
-        if ($normalized !== $raw) {
-            update_option(self::OPTION_GLOBAL_NOTICE_QUEUE, $normalized);
-        }
-
-        return $normalized;
-    }
-
-    private function set_global_notice_queue(array $queue)
-    {
-        $normalized = array();
-        foreach ($queue as $entry) {
-            if (!is_array($entry)) {
-                continue;
-            }
-
-            $type = isset($entry['type']) ? (string) $entry['type'] : 'error';
-            $message = isset($entry['message']) ? trim((string) $entry['message']) : '';
-            $time = isset($entry['time']) ? (int) $entry['time'] : 0;
-            if ($message === '') {
-                continue;
-            }
-
-            $normalized[] = array(
-                'type' => $type === 'success' ? 'success' : 'error',
-                'message' => $message,
-                'time' => $time > 0 ? $time : time(),
-            );
-        }
-
-        update_option(self::OPTION_GLOBAL_NOTICE_QUEUE, $normalized);
-    }
-
-    private function enqueue_global_notice($type, $message)
-    {
-        $message = trim((string) $message);
-        if ($message === '') {
-            return;
-        }
-
-        $queue = $this->get_global_notice_queue();
-        $queue[] = array(
-            'type' => $type === 'success' ? 'success' : 'error',
-            'message' => $message,
-            'time' => time(),
-        );
-        $this->set_global_notice_queue($queue);
-    }
-
-    private function consume_global_notice_from_queue()
-    {
-        $queue = $this->get_global_notice_queue();
-        if (empty($queue)) {
-            return array();
-        }
-
-        $notice = array_shift($queue);
-        $this->set_global_notice_queue($queue);
-        return is_array($notice) ? $notice : array();
-    }
-
     private function set_auto_disabled_notice($addon_name, $reason)
     {
         $addon_name = trim((string) $addon_name);
@@ -815,67 +723,7 @@ class Addon_Manager
             $reason = 'Motivo no especificado.';
         }
 
-        $this->enqueue_global_notice('error', 'Se desactivó automáticamente "' . $addon_name . '" por seguridad. Motivo: ' . $reason);
-    }
-
-    private function get_addon_label_from_id($addon_id)
-    {
-        $parsed = $this->parse_addon_id($addon_id);
-        if ($parsed['origin'] === 'core') {
-            return basename((string) $parsed['value']);
-        }
-
-        if ($parsed['origin'] === 'user') {
-            return basename((string) $parsed['value']);
-        }
-
-        return (string) $addon_id;
-    }
-
-    private function get_recent_blocked_notice($max_age_seconds = 1800)
-    {
-        $blocked = $this->get_blocked_addons();
-        if (empty($blocked)) {
-            return array();
-        }
-
-        $latest_id = '';
-        $latest = array();
-        foreach ($blocked as $addon_id => $payload) {
-            if (!is_array($payload)) {
-                continue;
-            }
-
-            $blocked_time = isset($payload['time']) ? (int) $payload['time'] : 0;
-            if ($blocked_time <= 0) {
-                continue;
-            }
-
-            if (empty($latest) || $blocked_time > (int) $latest['time']) {
-                $latest = $payload;
-                $latest_id = (string) $addon_id;
-            }
-        }
-
-        if (empty($latest) || $latest_id === '') {
-            return array();
-        }
-
-        $age = time() - (int) $latest['time'];
-        if ($age < 0 || $age > (int) $max_age_seconds) {
-            return array();
-        }
-
-        $label = $this->get_addon_label_from_id($latest_id);
-        $reason = isset($latest['message']) ? trim((string) $latest['message']) : '';
-        if ($reason === '') {
-            $reason = 'Motivo no especificado.';
-        }
-
-        return array(
-            'type' => 'error',
-            'message' => 'Se desactivó automáticamente "' . $label . '" por seguridad. Motivo: ' . $reason,
-        );
+        $this->set_admin_notice('error', 'Se desactivó automáticamente "' . $addon_name . '" por seguridad. Motivo: ' . $reason);
     }
 
     private function consume_admin_notice()
@@ -901,35 +749,6 @@ class Addon_Manager
             'type' => $query_notice_type === 'success' ? 'success' : 'error',
             'message' => $query_notice_msg,
         );
-    }
-
-    public function display_global_admin_notice()
-    {
-        if (self::$global_notice_rendered) {
-            return;
-        }
-
-        if (!is_admin() || (!current_user_can('manage_options') && !current_user_can('activate_plugins'))) {
-            return;
-        }
-
-        $notice = $this->consume_admin_notice();
-        $query_notice = $this->get_notice_from_query();
-        if (!empty($query_notice['message'])) {
-            $notice = $query_notice;
-        }
-
-        if (empty($notice['message'])) {
-            $notice = $this->consume_global_notice_from_queue();
-        }
-
-        if (empty($notice['message'])) {
-            return;
-        }
-
-        $notice_type = !empty($notice['type']) && $notice['type'] === 'success' ? 'notice-success' : 'notice-error';
-        echo '<div class="notice ' . esc_attr($notice_type) . ' is-dismissible"><p>' . esc_html((string) $notice['message']) . '</p></div>';
-        self::$global_notice_rendered = true;
     }
 
     private function get_approved_signatures()
@@ -1737,6 +1556,20 @@ class Addon_Manager
 
                 <a href="?page=addon-manager&tab=user" class="nav-tab <?php echo $active_tab === 'user' ? 'nav-tab-active' : ''; ?>">Addons de usuario</a>
             </h2>
+
+            <?php
+            $notice = $this->consume_admin_notice();
+            $query_notice = $this->get_notice_from_query();
+            if (!empty($query_notice['message'])) {
+                $notice = $query_notice;
+            }
+            if (!empty($notice['message'])):
+                $notice_type = !empty($notice['type']) && $notice['type'] === 'success' ? 'notice-success' : 'notice-error';
+            ?>
+                <div class="notice <?php echo esc_attr($notice_type); ?> is-dismissible" style="margin-top:12px;">
+                    <p><?php echo esc_html((string) $notice['message']); ?></p>
+                </div>
+            <?php endif; ?>
 
             <div id="addon-message"></div>
 
