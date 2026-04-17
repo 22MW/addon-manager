@@ -8,7 +8,6 @@
  * Version: 1.0.22
  * Author:  22MW
  */
-print_r('hola');
 // Prevenir acceso directo
 if (!defined('ABSPATH')) {
     exit;

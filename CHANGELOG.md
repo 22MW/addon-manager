@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4 - 2026-04-17
+- Nueva pestaña "Addons de usuario" con subida de `.php` a `wp-content/uploads/addon-manager/user-addons/`.
+- Validación de subida reforzada: permisos, nonce, extensión/tamaño, cabecera mínima, lint y patrones bloqueados.
+- Activación segura unificada para addons core + usuario con healthcheck, cuarentena y rollback.
+- Modo estricto en runtime: si un addon activo cambia o falla al cargar, se desactiva automáticamente.
+- Nuevos avisos de seguridad y mejoras de UX en subida/eliminación de addons de usuario.
+
 ## 1.0.3 - 2026-04-16
 - Movido `woo-booking-descount.php` a `private/` para excluirlo del selector público de addons.
 - Actualizado `woocommerce-cupones-admin.php` a la versión `2.23` con ajuste de nombre y formato.
