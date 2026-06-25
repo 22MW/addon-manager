@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /*
 Plugin Name: Debug Elementor related products args
 Description: Addon de depuración que registra en error_log los argumentos de productos relacionados enviados por Elementor Pro.

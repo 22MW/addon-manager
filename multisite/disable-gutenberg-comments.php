@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /*
 Plugin Name: Desactivar Gutenberg y Comentarios en Multisite
 Description: Desactiva editor de bloques y comentarios en todos los sitios de la red multisite.

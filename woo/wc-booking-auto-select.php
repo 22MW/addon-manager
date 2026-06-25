@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 
 /**
  * Plugin Name: WC Booking Auto-Select con WPML Support

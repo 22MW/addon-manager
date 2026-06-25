@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Ver TODOS metadatos de cualquier post/CPT
  * Description: Añade un metabox de auditoría para ver postmeta y datos WP_Post en cualquier post type del admin.

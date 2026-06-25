@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Disable textdomain notice
  * Description: Reduce avisos de textdomain en ejecución/admin para limpiar logs y notificaciones.

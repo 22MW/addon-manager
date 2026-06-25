@@ -134,6 +134,26 @@ class Addon_Manager
                 continue;
             }
 
+            $content = file_get_contents($addon_path);
+            if (!is_string($content) || trim($content) === '') {
+                $reason = 'No se pudo leer el archivo del addon activo.';
+                $this->set_blocked_addon($addon_id, $reason);
+                $this->set_auto_disabled_notice($file_name, $reason);
+                unset($approved_signatures[$addon_id]);
+                $signatures_changed = true;
+                continue;
+            }
+
+            $blocked_pattern = $this->find_blocked_pattern($content);
+            if ($blocked_pattern !== '') {
+                $reason = $this->get_blocked_pattern_message($blocked_pattern);
+                $this->set_blocked_addon($addon_id, $reason);
+                $this->set_auto_disabled_notice($file_name, $reason);
+                unset($approved_signatures[$addon_id]);
+                $signatures_changed = true;
+                continue;
+            }
+
             $lint_message = '';
             if (!$this->lint_php_file($addon_path, $lint_message)) {
                 $reason = $this->build_syntax_error_message($lint_message);
@@ -250,6 +270,10 @@ class Addon_Manager
             return;
         }
 
+        if ($lint_message !== '') {
+            $this->healthcheck_payload['lint_warning'] = $lint_message;
+        }
+
         include_once $addon_path;
     }
 
@@ -270,10 +294,16 @@ class Addon_Manager
             ), 500);
         }
 
-        wp_send_json_success(array(
+        $data = array(
             'status' => 'ok',
             'time' => time(),
-        ), 200);
+        );
+
+        if (!empty($this->healthcheck_payload['lint_warning'])) {
+            $data['lint_warning'] = (string) $this->healthcheck_payload['lint_warning'];
+        }
+
+        wp_send_json_success($data, 200);
     }
 
     private function get_user_addons_dir()
@@ -896,8 +926,13 @@ class Addon_Manager
 
     private function build_syntax_error_message($lint_message = '')
     {
+        $lint_message = trim((string) $lint_message);
+        if ($lint_message !== '' && strpos($lint_message, 'Lint no disponible') === 0) {
+            return $lint_message;
+        }
+
         $message = 'Error de sintaxis en el addon. Revisa el archivo y vuelve a intentarlo.';
-        if (preg_match('/on line\s+(\d+)/i', (string) $lint_message, $matches)) {
+        if (preg_match('/on line\s+(\d+)/i', $lint_message, $matches)) {
             $message .= ' Línea ' . (int) $matches[1] . '.';
         }
 
@@ -909,11 +944,13 @@ class Addon_Manager
         $lint_message = '';
 
         if (!function_exists('exec')) {
+            $lint_message = 'Lint no disponible: la función exec() está deshabilitada en este servidor. Se usará healthcheck como validación de compatibilidad.';
             return true;
         }
 
         $php_binary = $this->get_php_lint_binary();
         if ($php_binary === '') {
+            $lint_message = 'Lint no disponible: no se encontró un binario PHP CLI ejecutable. Se usará healthcheck como validación de compatibilidad.';
             return true;
         }
 
@@ -928,6 +965,25 @@ class Addon_Manager
         }
 
         return true;
+    }
+
+    private function get_blocked_pattern_message($pattern)
+    {
+        $messages = array(
+            'unsafe_redirect_output' => 'Este addon contiene una acción que puede interrumpir la carga normal de WordPress. Por seguridad no se ha subido ni activado.',
+            'unsafe_redirect_hook' => 'Este addon contiene una acción que puede interrumpir la carga normal de WordPress. Por seguridad no se ha subido ni activado.',
+            'unsafe_exit_hook' => 'Este addon contiene una acción que puede interrumpir la carga normal de WordPress. Por seguridad no se ha subido ni activado.',
+            'eval()' => 'Este addon intenta ejecutar código dinámico. Por seguridad no se ha subido ni activado.',
+            'base64_decode()' => 'Este addon contiene código ofuscado o codificado. Por seguridad no se ha subido ni activado.',
+            'shell_exec()' => 'Este addon intenta ejecutar comandos del servidor. Por seguridad no se ha subido ni activado.',
+            'exec()' => 'Este addon intenta ejecutar comandos del servidor. Por seguridad no se ha subido ni activado.',
+            'system()' => 'Este addon intenta ejecutar comandos del servidor. Por seguridad no se ha subido ni activado.',
+            'passthru()' => 'Este addon intenta ejecutar comandos del servidor. Por seguridad no se ha subido ni activado.',
+            'proc_open()' => 'Este addon intenta abrir procesos del servidor. Por seguridad no se ha subido ni activado.',
+            'popen()' => 'Este addon intenta abrir procesos del servidor. Por seguridad no se ha subido ni activado.',
+        );
+
+        return isset($messages[$pattern]) ? $messages[$pattern] : 'Este addon contiene una instrucción no permitida. Por seguridad no se ha subido ni activado.';
     }
 
     private function find_blocked_pattern($content)
@@ -947,6 +1003,26 @@ class Addon_Manager
             if (preg_match($regex, $content)) {
                 return $label;
             }
+        }
+
+        return $this->find_contextual_runtime_risk($content);
+    }
+
+    private function find_contextual_runtime_risk($content)
+    {
+        $content = (string) $content;
+
+        if (preg_match('/\b(?:echo|print|var_dump|print_r)\b[\s\S]{0,800}\bwp_(?:safe_)?redirect\s*\(/i', $content)) {
+            return 'unsafe_redirect_output';
+        }
+
+        $sensitive_hooks = '(admin_menu|admin_init|init|wp_loaded|plugins_loaded)';
+        if (preg_match('/add_action\s*\(\s*[\'\"]' . $sensitive_hooks . '[\'\"]\s*,[\s\S]{0,160}\bwp_(?:safe_)?redirect\s*\(/i', $content)) {
+            return 'unsafe_redirect_hook';
+        }
+
+        if (preg_match('/add_action\s*\(\s*[\'\"]' . $sensitive_hooks . '[\'\"]\s*,[\s\S]{0,240}\b(?:exit|die\s*\()\b/i', $content)) {
+            return 'unsafe_exit_hook';
         }
 
         return '';
@@ -991,7 +1067,7 @@ class Addon_Manager
 
         $blocked_pattern = $this->find_blocked_pattern($content);
         if ($blocked_pattern !== '') {
-            return array('ok' => false, 'message' => 'Patrón bloqueado detectado: ' . $blocked_pattern);
+            return array('ok' => false, 'message' => $this->get_blocked_pattern_message($blocked_pattern));
         }
 
         $plugin_data = get_file_data($tmp_path, array(
@@ -1043,8 +1119,10 @@ class Addon_Manager
             exit;
         }
 
-        echo '<div class="wrap"><h1>Addon Manager</h1><p>' . esc_html($message) . '</p>';
-        echo '<p><a class="button button-primary" href="' . esc_url($url) . '">Volver</a></p></div>';
+        $notice_class = $type === 'success' ? 'notice-success' : 'notice-error';
+        echo '<div class="wrap"><h1>Addon Manager</h1>';
+        echo '<div class="notice ' . esc_attr($notice_class) . '"><p>' . esc_html($message) . '</p></div>';
+        echo '<p><a class="button button-primary" href="' . esc_url($url) . '">Volver a Addon Manager</a></p></div>';
         exit;
     }
 
@@ -1279,9 +1357,14 @@ class Addon_Manager
         }
 
         $http_code = (int) wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $json = json_decode((string) $body, true);
+
         if ($http_code !== 200) {
             $message = 'No se pudo activar el addon porque no superó la validación automática.';
-            if ($http_code >= 500) {
+            if (!empty($json['data']['message']) && is_string($json['data']['message'])) {
+                $message = (string) $json['data']['message'];
+            } elseif ($http_code >= 500) {
                 $message = 'No se pudo activar el addon porque provocó un error interno durante la validación.';
             } elseif ($http_code === 401 || $http_code === 403) {
                 $message = 'No se pudo activar el addon por una restricción de acceso durante la validación.';
@@ -1293,8 +1376,7 @@ class Addon_Manager
             );
         }
 
-        $body = wp_remote_retrieve_body($response);
-        $json = json_decode((string) $body, true);
+
         if (!is_array($json)) {
             return array(
                 'ok' => false,
@@ -1313,9 +1395,14 @@ class Addon_Manager
             );
         }
 
+        $message = '';
+        if (!empty($json['data']['lint_warning']) && is_string($json['data']['lint_warning'])) {
+            $message = (string) $json['data']['lint_warning'];
+        }
+
         return array(
             'ok' => true,
-            'message' => '',
+            'message' => $message,
         );
     }
 
@@ -1378,7 +1465,10 @@ class Addon_Manager
     }
 
     /**
-     * Recover from fatal errors by auto-disabling the addon involved.
+     * Recover from fatal errors during addon include or activation healthcheck.
+     *
+     * Fatals triggered later by callbacks registered by an addon cannot be
+     * attributed safely here unless a loading or pending marker is still active.
      *
      * @return void
      */
@@ -1554,7 +1644,7 @@ class Addon_Manager
         }
 
         wp_enqueue_style('addon-manager-css', plugin_dir_url( ADDON_MANAGER_FILE ) . 'assets/style.css', array(), '3.0.0');
-        wp_enqueue_script('addon-manager-js', plugin_dir_url( ADDON_MANAGER_FILE ) . 'assets/script.js', array('jquery'), '3.0.0', true);
+        wp_enqueue_script('addon-manager-js', plugin_dir_url( ADDON_MANAGER_FILE ) . 'assets/script.js', array('jquery'), '3.0.2-debug-alert', true);
 
         wp_localize_script('addon-manager-js', 'addonManager', array(
             'ajax_url' => admin_url('admin-ajax.php'),
@@ -1707,6 +1797,7 @@ class Addon_Manager
             ?>
                 <div class="addon-upload-box" style="background:#fff;border-radius:12px;padding:14px;margin-top:14px;">
                     <h3 style="margin-top:0;">Subir addon de usuario (.php)</h3>
+                    <div id="am-upload-message" aria-live="polite"></div>
                     <form id="am-user-addon-upload-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data" data-nonce="<?php echo esc_attr(wp_create_nonce('addon_manager_upload_user_addon')); ?>">
                         <input type="hidden" name="action" value="addon_manager_upload_user_addon">
                         <?php wp_nonce_field('addon_manager_upload_user_addon'); ?>
@@ -1858,6 +1949,9 @@ class Addon_Manager
         $this->clear_pending_activation();
         $this->clear_blocked_addon($addon_id);
         $success_message = 'Addon activado correctamente tras verificación.';
+        if (!empty($health['message'])) {
+            $success_message .= ' Aviso: ' . (string) $health['message'];
+        }
         $this->set_admin_notice('success', $success_message);
         $current_tab = isset($_POST['current_tab']) ? sanitize_key(wp_unslash($_POST['current_tab'])) : 'wp';
         wp_send_json_success(array(

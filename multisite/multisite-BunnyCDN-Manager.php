@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Multisite BunnyCDN Manager
  * Description: Gestión centralizada de BunnyCDN en multisite con ajustes de red y activación por sitio.

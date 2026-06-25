@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6.1 - 2026-06-26
+- Endurecida la subida y activación de addons de usuario con validación contextual compatible con reglas WordPress.
+- Mejorada la detección de acciones runtime peligrosas sin bloquear redirects válidos en handlers administrativos.
+- Añadidos mensajes humanos para bloqueos de seguridad y feedback visible en la subida AJAX.
+- Añadidos guards `ABSPATH` a addons distribuibles.
+
 ## 1.0.6 - 2026-04-17
 - Refactor estructural interno: bootstrap más limpio, clase principal movida a `includes/Core/`, corrección de carga duplicada y estabilidad en activación/notificaciones.
 

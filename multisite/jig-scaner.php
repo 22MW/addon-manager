@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 add_action('network_admin_menu', function () {
     //add_menu_page('JIG Shortcode Scanner', 'JIG Scanner', 'manage_network', 'jig-scanner', 'jig_shortcode_report');
 });

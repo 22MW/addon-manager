@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Limpiar Transients WC
  * Description: Desactiva caché de filtros y limpia transients de WooCommerce de forma periódica.

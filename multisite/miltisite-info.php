@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Multisite Info
  * Description: Panel en red con información de sitios y plugins en formato grid para auditoría multisite.

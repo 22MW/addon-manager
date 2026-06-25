@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /*
 Plugin Name: Multisite Orphan Table Scanner
 Description: Escanea la base de datos de la red para detectar tablas huérfanas o no vinculadas a sitios activos.

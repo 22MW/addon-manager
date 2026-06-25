@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 /**
  * Plugin Name: Email Redirect Manager
  * Description: Redirige correos salientes de WordPress a destinatarios de prueba con prefijo configurable (Tools > Email Redirect).
@@ -11,7 +13,8 @@
 
 // Añadir página de configuración en Tools
 add_action('admin_menu', 'erm_add_admin_menu');
-function erm_add_admin_menu() {
+function erm_add_admin_menu()
+{
     add_management_page(
         'Gestión de Email',
         'Email Redirect',
@@ -22,8 +25,9 @@ function erm_add_admin_menu() {
 }
 
 // Página de opciones
-function erm_options_page() {
-    ?>
+function erm_options_page()
+{
+?>
     <div class="wrap">
         <h1>Configuración de Redirección de Emails</h1>
         <form method="post" action="options.php">
@@ -34,12 +38,13 @@ function erm_options_page() {
             ?>
         </form>
     </div>
-    <?php
+<?php
 }
 
 // Registrar configuraciones
 add_action('admin_init', 'erm_settings_init');
-function erm_settings_init() {
+function erm_settings_init()
+{
     register_setting('erm_settings', 'erm_email_destino');
     register_setting('erm_settings', 'erm_prefijo_asunto');
 
@@ -67,30 +72,33 @@ function erm_settings_init() {
     );
 }
 
-function erm_email_destino_render() {
+function erm_email_destino_render()
+{
     $value = get_option('erm_email_destino', 'tuemail@gmail.com');
-    ?>
+?>
     <input type="text" name="erm_email_destino" value="<?php echo esc_attr($value); ?>" style="width: 400px;">
     <p class="description">Puedes añadir varios emails separados por coma (ej: email1@gmail.com, email2@gmail.com)</p>
-    <?php
+<?php
 }
 
-function erm_prefijo_asunto_render() {
+function erm_prefijo_asunto_render()
+{
     $value = get_option('erm_prefijo_asunto', '[REDIRECCIONADO] -  ');
-    ?>
+?>
     <input type="text" name="erm_prefijo_asunto" value="<?php echo esc_attr($value); ?>" style="width: 400px;">
     <p class="description">Texto que se añadirá al inicio del asunto de todos los emails</p>
-    <?php
+<?php
 }
 
 // Redirigir y modificar correos
 add_filter('wp_mail', 'erm_redirigir_correos');
-function erm_redirigir_correos($args) {
+function erm_redirigir_correos($args)
+{
     $nuevo_destino = get_option('erm_email_destino', 'tuemail@gmail.com');
     $texto_previo = get_option('erm_prefijo_asunto', '[REDIRECCIONADO] ');
-    
+
     $args['to'] = $nuevo_destino;
     $args['subject'] = $texto_previo . $args['subject'];
-    
+
     return $args;
 }

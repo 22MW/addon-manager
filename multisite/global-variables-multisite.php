@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /*
 Plugin Name: Global Variables Settings for Specific Site (Network Admin)
 Description: Gestiona variables globales desde Network Admin sobre un sitio objetivo configurable.

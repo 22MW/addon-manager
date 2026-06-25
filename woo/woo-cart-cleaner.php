@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: WooCommerce Cart Cleaner
  * Description: Limpia carritos abandonados/caducados en intervalos configurables desde WooCommerce > Productos > Cart Cleaner.

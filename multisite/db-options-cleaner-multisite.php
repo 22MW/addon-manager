@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * MU Plugin: Network DB Native Cleaner (Standalone)
  * Description: Escanea y limpia rastros de plugins en tablas nativas WP (options/meta/transients/cron) por prefijos en multisite.

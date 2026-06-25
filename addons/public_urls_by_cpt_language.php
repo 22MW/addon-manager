@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: URLs públicas por CPT e idioma
  * Description: Shortcode para listar URLs publicadas por idioma y CPT, con filtros y botón de exportación a Markdown.

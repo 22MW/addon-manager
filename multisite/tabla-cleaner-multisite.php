@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * MU Plugin: Network DB Table Cleaner (Agrupado + Matching + Orden)
  * Description: Lista y agrupa tablas no-core en multisite para limpieza controlada por grupos.

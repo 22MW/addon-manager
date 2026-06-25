@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: MS DB Cleaner
  * Description: Limpieza controlada de base de datos para red WordPress Multisite con panel en Network Admin.

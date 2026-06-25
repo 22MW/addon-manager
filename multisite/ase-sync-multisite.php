@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: ASE Sync Multisite
  * Description: Sincroniza la configuración de ASE en toda la red multisite y registra incidencias en log.

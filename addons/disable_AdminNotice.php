@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Disable Admin Notices
  * Description: Oculta avisos del admin y permite mostrarlos/ocultarlos desde un botón en la barra superior.

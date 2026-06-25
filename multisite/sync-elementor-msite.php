@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /*
 Plugin Name: Sync Elementor Multisite
 Description: Sincroniza plantillas Elementor desde un sitio maestro hacia sitios destino en red multisite.

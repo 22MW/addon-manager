@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 
 /**
  * Plugin Name: WooCommerce Product Purchase Checker

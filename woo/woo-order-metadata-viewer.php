@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Ver TODOS metadatos pedido Woo (Clásico + HPOS)
  * Description: Metabox de auditoría para ver todos los metadatos y datos del pedido (Woo clásico y HPOS).

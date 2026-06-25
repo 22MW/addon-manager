@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /*
 Plugin Name: WC cupones pedidos visibles en admin y emails
 Description: Muestra cupones usados en pedidos WooCommerce dentro del admin y en emails de administración.

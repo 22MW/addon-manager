@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Name: Multisite SEO Indexing Manager
  * Description: Gestiona estado de indexación SEO (index/noindex) en todos los sitios de la red multisite.
