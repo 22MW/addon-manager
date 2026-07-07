@@ -82,7 +82,20 @@ function mu_dbnc_signatures() {
 }
 
 /** Helpers */
-function mu_dbnc_like_prefix($p){ return str_replace(array('%','_'), array('\%','\_'), $p) . '%'; }
+function mu_dbnc_allowed_areas(){ return array('options','postmeta','usermeta','termmeta','commentmeta','transients','cron'); }
+function mu_dbnc_like_prefix($p){ global $wpdb; return $wpdb->esc_like($p) . '%'; }
+function mu_dbnc_sanitize_extra_prefixes($extra){
+    $prefixes = array_filter(array_map('trim', preg_split('/[\r\n]+/', (string)$extra)));
+    return array_values(array_filter($prefixes, function($prefix){
+        return is_string($prefix) && preg_match('/^[A-Za-z0-9_-]{1,64}$/', $prefix);
+    }));
+}
+function mu_dbnc_sanitize_areas($areas){ return array_values(array_intersect(mu_dbnc_allowed_areas(), (array)$areas)); }
+function mu_dbnc_is_safe_identifier($identifier){ return is_string($identifier) && preg_match('/^[A-Za-z0-9_]+$/', $identifier); }
+function mu_dbnc_table_name($prefix, $suffix){
+    $table = $prefix . $suffix;
+    return mu_dbnc_is_safe_identifier($table) ? $table : '';
+}
 function mu_dbnc_bytes_h($b){ $u=array('B','KB','MB','GB','TB'); $i=0; while($b>=1024 && $i<count($u)-1){$b/=1024;$i++;} return sprintf('%.2f %s',$b,$u[$i]); }
 
 /**
@@ -102,7 +115,7 @@ function mu_dbnc_scan_counts($selected_slugs, $extra) {
         }
     }
     // Prefijos extra manuales
-    $extra = array_filter(array_map('trim', preg_split('/[\r\n]+/', (string)$extra)));
+    $extra = mu_dbnc_sanitize_extra_prefixes($extra);
     if($extra){
         $extra_map = array(
             'options'=>$extra,'postmeta'=>$extra,'usermeta'=>$extra,'termmeta'=>$extra,
@@ -117,13 +130,14 @@ function mu_dbnc_scan_counts($selected_slugs, $extra) {
     $agg = array(); // [slug][area] => count
 
     foreach($targets as $slug => $areas){
-        foreach(array('options','postmeta','usermeta','termmeta','commentmeta','transients','cron') as $area){
+        foreach(mu_dbnc_allowed_areas() as $area){
             $agg[$slug][$area] = 0;
         }
     }
 
     foreach($sites as $s){
-        $blog_id = (int)$s->blog_id;
+        $blog_id = absint($s->blog_id);
+        if(!$blog_id) continue;
         $prefix  = $wpdb->get_blog_prefix($blog_id);
 
         foreach($targets as $slug => $areas){
@@ -131,35 +145,45 @@ function mu_dbnc_scan_counts($selected_slugs, $extra) {
             if(!empty($areas['options'])){
                 foreach($areas['options'] as $p){
                     $like = mu_dbnc_like_prefix($p);
-                    $agg[$slug]['options'] += (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$prefix}options` WHERE option_name LIKE '{$like}'");
+                    $table = mu_dbnc_table_name($prefix, 'options');
+                    if(!$table) continue;
+                    $agg[$slug]['options'] += (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE option_name LIKE %s", $like));
                 }
             }
             // postmeta
             if(!empty($areas['postmeta'])){
                 foreach($areas['postmeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
-                    $agg[$slug]['postmeta'] += (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$prefix}postmeta` WHERE meta_key LIKE '{$like}'");
+                    $table = mu_dbnc_table_name($prefix, 'postmeta');
+                    if(!$table) continue;
+                    $agg[$slug]['postmeta'] += (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE meta_key LIKE %s", $like));
                 }
             }
             // usermeta
             if(!empty($areas['usermeta'])){
                 foreach($areas['usermeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
-                    $agg[$slug]['usermeta'] += (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$prefix}usermeta` WHERE meta_key LIKE '{$like}'");
+                    $table = mu_dbnc_table_name($prefix, 'usermeta');
+                    if(!$table) continue;
+                    $agg[$slug]['usermeta'] += (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE meta_key LIKE %s", $like));
                 }
             }
             // termmeta
             if(!empty($areas['termmeta'])){
                 foreach($areas['termmeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
-                    $agg[$slug]['termmeta'] += (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$prefix}termmeta` WHERE meta_key LIKE '{$like}'");
+                    $table = mu_dbnc_table_name($prefix, 'termmeta');
+                    if(!$table) continue;
+                    $agg[$slug]['termmeta'] += (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE meta_key LIKE %s", $like));
                 }
             }
             // commentmeta
             if(!empty($areas['commentmeta'])){
                 foreach($areas['commentmeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
-                    $agg[$slug]['commentmeta'] += (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$prefix}commentmeta` WHERE meta_key LIKE '{$like}'");
+                    $table = mu_dbnc_table_name($prefix, 'commentmeta');
+                    if(!$table) continue;
+                    $agg[$slug]['commentmeta'] += (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE meta_key LIKE %s", $like));
                 }
             }
             // transients (en options)
@@ -167,7 +191,9 @@ function mu_dbnc_scan_counts($selected_slugs, $extra) {
                 foreach($areas['transients'] as $p){
                     $like1 = mu_dbnc_like_prefix('_transient_' . $p);
                     $like2 = mu_dbnc_like_prefix('_site_transient_' . $p);
-                    $agg[$slug]['transients'] += (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$prefix}options` WHERE option_name LIKE '{$like1}' OR option_name LIKE '{$like2}'");
+                    $table = mu_dbnc_table_name($prefix, 'options');
+                    if(!$table) continue;
+                    $agg[$slug]['transients'] += (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE option_name LIKE %s OR option_name LIKE %s", $like1, $like2));
                 }
             }
             // cron: cuenta hooks cuyo nombre empieza por el prefijo
@@ -209,7 +235,8 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
             $targets[$slug] = $sign[$slug];
         }
     }
-    $extra = array_filter(array_map('trim', preg_split('/[\r\n]+/', (string)$extra)));
+    $areas_to_delete = mu_dbnc_sanitize_areas($areas_to_delete);
+    $extra = mu_dbnc_sanitize_extra_prefixes($extra);
     if($extra){
         $extra_map = array(
             'options'=>$extra,'postmeta'=>$extra,'usermeta'=>$extra,'termmeta'=>$extra,
@@ -223,7 +250,8 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
     $deleted = array(); $errors = array();
 
     foreach($sites as $s){
-        $blog_id = (int)$s->blog_id;
+        $blog_id = absint($s->blog_id);
+        if(!$blog_id) continue;
         $prefix  = $wpdb->get_blog_prefix($blog_id);
 
         foreach($targets as $slug => $areas){
@@ -231,7 +259,9 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
             if(in_array('options',$areas_to_delete,true) && !empty($areas['options'])){
                 foreach($areas['options'] as $p){
                     $like = mu_dbnc_like_prefix($p);
-                    $res = $wpdb->query("DELETE FROM `{$prefix}options` WHERE option_name LIKE '{$like}'");
+                    $table = mu_dbnc_table_name($prefix, 'options');
+                    if(!$table) continue;
+                    $res = $wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE option_name LIKE %s", $like));
                     if($res!==false) $deleted[] = "{$prefix}options option_name LIKE {$p}% ({$res})"; else $errors[] = "Error borrando options {$p} en blog {$blog_id}";
                 }
             }
@@ -239,8 +269,10 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
             if(in_array('postmeta',$areas_to_delete,true) && !empty($areas['postmeta'])){
                 foreach($areas['postmeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
+                    $table = mu_dbnc_table_name($prefix, 'postmeta');
+                    if(!$table) continue;
                     do {
-                        $res = $wpdb->query("DELETE FROM `{$prefix}postmeta` WHERE meta_key LIKE '{$like}' LIMIT 10000");
+                        $res = $wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE meta_key LIKE %s LIMIT 10000", $like));
                     } while($res && $res==10000);
                     if($res!==false) $deleted[] = "{$prefix}postmeta meta_key LIKE {$p}%"; else $errors[]="Error borrando postmeta {$p} en blog {$blog_id}";
                 }
@@ -249,8 +281,10 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
             if(in_array('usermeta',$areas_to_delete,true) && !empty($areas['usermeta'])){
                 foreach($areas['usermeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
+                    $table = mu_dbnc_table_name($prefix, 'usermeta');
+                    if(!$table) continue;
                     do {
-                        $res = $wpdb->query("DELETE FROM `{$prefix}usermeta` WHERE meta_key LIKE '{$like}' LIMIT 10000");
+                        $res = $wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE meta_key LIKE %s LIMIT 10000", $like));
                     } while($res && $res==10000);
                     if($res!==false) $deleted[] = "{$prefix}usermeta meta_key LIKE {$p}%"; else $errors[]="Error usermeta {$p} blog {$blog_id}";
                 }
@@ -259,8 +293,10 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
             if(in_array('termmeta',$areas_to_delete,true) && !empty($areas['termmeta'])){
                 foreach($areas['termmeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
+                    $table = mu_dbnc_table_name($prefix, 'termmeta');
+                    if(!$table) continue;
                     do {
-                        $res = $wpdb->query("DELETE FROM `{$prefix}termmeta` WHERE meta_key LIKE '{$like}' LIMIT 10000");
+                        $res = $wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE meta_key LIKE %s LIMIT 10000", $like));
                     } while($res && $res==10000);
                     if($res!==false) $deleted[] = "{$prefix}termmeta meta_key LIKE {$p}%"; else $errors[]="Error termmeta {$p} blog {$blog_id}";
                 }
@@ -269,8 +305,10 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
             if(in_array('commentmeta',$areas_to_delete,true) && !empty($areas['commentmeta'])){
                 foreach($areas['commentmeta'] as $p){
                     $like = mu_dbnc_like_prefix($p);
+                    $table = mu_dbnc_table_name($prefix, 'commentmeta');
+                    if(!$table) continue;
                     do {
-                        $res = $wpdb->query("DELETE FROM `{$prefix}commentmeta` WHERE meta_key LIKE '{$like}' LIMIT 10000");
+                        $res = $wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE meta_key LIKE %s LIMIT 10000", $like));
                     } while($res && $res==10000);
                     if($res!==false) $deleted[] = "{$prefix}commentmeta meta_key LIKE {$p}%"; else $errors[]="Error commentmeta {$p} blog {$blog_id}";
                 }
@@ -280,8 +318,10 @@ function mu_dbnc_delete($selected_slugs, $areas_to_delete, $extra) {
                 foreach($areas['transients'] as $p){
                     $like1 = mu_dbnc_like_prefix('_transient_' . $p);
                     $like2 = mu_dbnc_like_prefix('_site_transient_' . $p);
-                    $res1 = $wpdb->query("DELETE FROM `{$prefix}options` WHERE option_name LIKE '{$like1}'");
-                    $res2 = $wpdb->query("DELETE FROM `{$prefix}options` WHERE option_name LIKE '{$like2}'");
+                    $table = mu_dbnc_table_name($prefix, 'options');
+                    if(!$table) continue;
+                    $res1 = $wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE option_name LIKE %s", $like1));
+                    $res2 = $wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE option_name LIKE %s", $like2));
                     if($res1!==false && $res2!==false) $deleted[] = "{$prefix}options transients {$p}%"; else $errors[]="Error transients {$p} blog {$blog_id}";
                 }
             }
@@ -321,7 +361,7 @@ function mu_db_native_cleaner_screen() {
     $sign = mu_dbnc_signatures();
 
     $selected = isset($_POST['slugs']) && is_array($_POST['slugs']) ? array_map('sanitize_key', $_POST['slugs']) : array();
-    $areas    = isset($_POST['areas']) && is_array($_POST['areas']) ? array_map('sanitize_text_field', $_POST['areas']) : array('options','postmeta','usermeta','termmeta','commentmeta','transients','cron');
+    $areas    = isset($_POST['areas']) && is_array($_POST['areas']) ? mu_dbnc_sanitize_areas(array_map('sanitize_text_field', $_POST['areas'])) : mu_dbnc_allowed_areas();
     $extra    = isset($_POST['extra']) ? wp_unslash($_POST['extra']) : '';
 
     $action   = isset($_POST['action_do']) ? sanitize_text_field($_POST['action_do']) : '';

@@ -5,7 +5,7 @@
  * Description: Permite editar textos de emails de WooCommerce desde admin sin modificar plantillas core.
  * Marketing Description: Personaliza comunicación de marca en emails WooCommerce sin tocar plantillas.
  * Parameters: Editor visual desde su menú para personalizar textos de emails.
- * Version: 2.2.2
+ * Version: 2.2.33
  * Author: 22MW
  */
 

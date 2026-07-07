@@ -78,6 +78,11 @@ function mu_db_table_cleaner_base_name( $local_table_name ) {
     return preg_replace('/(?:_\d+)+$/', '', $local_table_name);
 }
 
+/** Valida identificadores SQL de tabla antes de usarlos entre backticks. */
+function mu_db_table_cleaner_is_safe_table_identifier( $table_name ) {
+    return is_string( $table_name ) && preg_match( '/^[A-Za-z0-9_]+$/', $table_name );
+}
+
 /**
  * Devuelve true si la tabla (sin prefijo local) debe ocultarse.
  * Aquí ocultamos cualquier tabla que contenga 'realmedialibrary' (case-insensitive).
@@ -265,6 +270,7 @@ function mu_db_table_cleaner_screen() {
 
     // Borrado por grupos (base_name)
     if ( isset($_POST['mu_db_drop_groups']) && check_admin_referer('mu_db_table_cleaner_nonce','mu_db_table_cleaner_nonce') ) {
+        if ( ! current_user_can('manage_network') ) wp_die('No tienes permisos suficientes.');
         $keys_to_drop = isset($_POST['group_keys']) && is_array($_POST['group_keys']) ? array_map('sanitize_text_field', $_POST['group_keys']) : array();
         $confirm = isset($_POST['confirm_phrase']) ? trim(wp_unslash($_POST['confirm_phrase'])) : '';
 
@@ -275,9 +281,7 @@ function mu_db_table_cleaner_screen() {
                 if ( ! isset($groups[$base_name]) ) { $errors[] = "Grupo desconocido: $base_name"; continue; }
                 foreach ( $groups[$base_name]['tables'] as $tbl ) {
                     $table = $tbl['table'];
-                    // Sanitiza nombre (solo A-Z, a-z, 0-9 y _)
-                    $safe = preg_replace('/[^A-Za-z0-9_]/', '', $table);
-                    if ( $safe !== $table ) { $errors[] = "Nombre no permitido: $table"; continue; }
+                    if ( ! mu_db_table_cleaner_is_safe_table_identifier($table) ) { $errors[] = "Nombre no permitido: $table"; continue; }
                     $sql = "DROP TABLE IF EXISTS `{$table}`";
                     $res = $wpdb->query($sql);
                     if ( $res !== false ) $dropped[] = $table; else $errors[] = "Error al borrar: $table";

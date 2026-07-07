@@ -389,11 +389,11 @@ class MS_DB_Cleaner {
         }
         
         // Obtener último sitio procesado
-        $last_site_id = intval(get_site_option(self::OPTION_LAST_SITE, 0));
+        $last_site_id = absint(get_site_option(self::OPTION_LAST_SITE, 0));
         
         // Obtener todos los IDs de sitios de forma manual para evitar problemas con get_sites()
         global $wpdb;
-        $blog_ids = $wpdb->get_col("SELECT blog_id FROM {$wpdb->blogs} WHERE blog_id > {$last_site_id} ORDER BY blog_id ASC LIMIT 1");
+        $blog_ids = $wpdb->get_col($wpdb->prepare("SELECT blog_id FROM {$wpdb->blogs} WHERE blog_id > %d ORDER BY blog_id ASC LIMIT 1", $last_site_id));
         
         // Si no hay más sitios, obtenemos el primer sitio para reiniciar
         if (empty($blog_ids)) {
@@ -418,7 +418,7 @@ class MS_DB_Cleaner {
         }
         
         // Obtener el ID del siguiente sitio
-        $site_id = intval($blog_ids[0]);
+        $site_id = absint($blog_ids[0]);
         
         // Obtener el total de sitios para mostrar progreso
         $total_sites = $wpdb->get_var("SELECT COUNT(blog_id) FROM {$wpdb->blogs}");
@@ -453,7 +453,7 @@ class MS_DB_Cleaner {
         update_site_option(self::OPTION_LAST_SITE, $site_id);
         
         // Calcular sitio actual para la barra de progreso
-        $current_position = $wpdb->get_var("SELECT COUNT(blog_id) FROM {$wpdb->blogs} WHERE blog_id <= {$site_id}");
+        $current_position = $wpdb->get_var($wpdb->prepare("SELECT COUNT(blog_id) FROM {$wpdb->blogs} WHERE blog_id <= %d", $site_id));
         
         // Devolver resultado
         wp_send_json_success([
@@ -562,6 +562,16 @@ class MS_DB_Cleaner {
         update_site_option(self::OPTION_LOG, $log);
         
         return true;
+    }
+
+    /**
+     * Validar identificadores SQL de tabla antes de usarlos entre backticks.
+     *
+     * @param string $table Nombre de tabla.
+     * @return bool
+     */
+    private function is_safe_table_identifier($table) {
+        return is_string($table) && preg_match('/^[A-Za-z0-9_]+$/', $table);
     }
     
     /**
@@ -699,7 +709,11 @@ class MS_DB_Cleaner {
         
         // Optimizar tablas (solo 1 a la vez para evitar timeouts)
         $table = reset($tables);
-        $result = $wpdb->query("OPTIMIZE TABLE $table");
+        if (!$this->is_safe_table_identifier($table) || strpos($table, $wpdb->prefix) !== 0) {
+            return "Tabla no válida para optimizar.";
+        }
+
+        $result = $wpdb->query("OPTIMIZE TABLE `{$table}`");
         
         return sprintf("Optimizada tabla: %s", $table);
     }
