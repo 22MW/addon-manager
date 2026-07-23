@@ -1,5 +1,5 @@
 <?php
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 
 /**
@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
  * Description: Añade shortcodes para comprobar compras por usuario/producto y listar productos comprados.
  * Marketing Description: Crea experiencias personalizadas validando compras reales con shortcodes.
  * Parameters: Shortcodes: [check_product_purchased] y [user_purchased_products] para áreas privadas y embudos.
- * Version: 1.0.22
+ * Version: 1.0.33
  * Author:  22MW
  */
 // Prevenir acceso directo
@@ -26,6 +26,11 @@ class WooCommerce_Product_Checker
      */
     public function __construct()
     {
+        if (did_action('init')) {
+            $this->init();
+            return;
+        }
+
         add_action('init', array($this, 'init'));
     }
 
@@ -60,13 +65,19 @@ class WooCommerce_Product_Checker
     {
         // Valores por defecto
         $atts = shortcode_atts(array(
+            'product_id' => 0, // 0 = producto actual
             'user_id' => 0, // 0 = usuario actual
         ), $atts, 'check_product_purchased');
 
-        // Obtener el ID del producto actual
-        $product_id = $this->get_current_product_id();
+        $product_id = absint($atts['product_id']);
+        $user_id = absint($atts['user_id']);
 
-        return $this->has_user_purchased_product($product_id, $atts['user_id']);
+        // Obtener el ID del producto actual si no se especifica.
+        if (empty($product_id)) {
+            $product_id = $this->get_current_product_id();
+        }
+
+        return $this->has_user_purchased_product($product_id, $user_id);
     }
 
     /**
@@ -79,7 +90,7 @@ class WooCommerce_Product_Checker
             'user_id' => 0, // 0 = usuario actual
         ), $atts, 'user_purchased_products');
 
-        return $this->get_user_purchased_products($atts['user_id']);
+        return $this->get_user_purchased_products(absint($atts['user_id']));
     }
 
     /**
@@ -114,7 +125,7 @@ class WooCommerce_Product_Checker
 
         // Si no encontramos producto, verificar parámetros GET/POST por si acaso
         if (isset($_GET['product_id'])) {
-            return intval($_GET['product_id']);
+            return absint(wp_unslash($_GET['product_id']));
         }
 
         return 0;
